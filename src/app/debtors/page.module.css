@@ -1,5 +1,6 @@
 .page {
   min-height: 100vh;
+  padding-bottom: 80px;
 }
 
 .main {
@@ -24,15 +25,21 @@
   color: var(--text-secondary);
 }
 
+.headerActions {
+  display: flex;
+  gap: 10px;
+}
+
 .searchBar {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: white;
+  background: var(--surface);
   padding: 12px 16px;
   border-radius: 8px;
   border: 1px solid var(--border);
   margin-bottom: 24px;
+  transition: background-color 0.3s, border-color 0.3s;
 }
 
 .searchBar input {
@@ -40,10 +47,17 @@
   outline: none;
   width: 100%;
   font-size: 15px;
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.searchBar input::placeholder {
+  color: var(--text-tertiary);
 }
 
 .debtorsList {
   padding: 16px 24px;
+  overflow-x: auto;
 }
 
 .table {
@@ -76,20 +90,93 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #f1f5f9;
+  background: var(--surface-hover);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--secondary);
+  flex-shrink: 0;
 }
 
+.textRight {
+  text-align: right !important;
+}
+
+.dangerText {
+  color: var(--danger) !important;
+}
+
+.successText {
+  color: var(--success) !important;
+}
+
+.creditWarning {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--warning);
+  background: var(--warning-light);
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+/* Enhanced empty state */
 .emptyState {
   text-align: center;
-  padding: 40px;
-  color: var(--text-secondary);
-  font-style: italic;
+  padding: 48px 24px;
 }
 
+.emptyIcon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--primary-light);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.emptyState h3 {
+  font-size: 18px;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.emptyState p {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Skeleton */
+.skeletonText {
+  border-radius: 6px;
+}
+
+.skeletonSearch {
+  height: 48px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.skeletonRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.skeletonCircle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+/* Modal */
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -102,15 +189,16 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 24px;
 }
 
 .modalContent {
-  background: white;
+  background: var(--surface);
   border-radius: 12px;
   padding: 24px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-lg);
 }
 
 .modalContent h2 {
@@ -134,15 +222,20 @@
     align-items: flex-start;
     gap: 16px;
   }
+  .headerActions {
+    width: 100%;
+  }
+  .headerActions .btn {
+    flex: 1;
+  }
   .debtorsList {
-    overflow-x: auto;
-    padding: 16px;
+    padding: 12px;
   }
   .table th, .table td {
     white-space: nowrap;
+    padding: 12px;
   }
   .modalContent {
     padding: 20px;
-    margin: 16px;
   }
 }

@@ -2,22 +2,27 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { Debtor, Transaction, DebtorWithTransactions } from '@/lib/types'
+import { exportToCSV } from '@/lib/exportData'
+import { useToast } from '@/components/ToastProvider'
 import Navigation from '@/components/Navigation'
 import LedgerModal from '@/components/LedgerModal'
 import styles from './page.module.css'
-import { Plus, Search, User } from 'lucide-react'
+import { Plus, Search, User, Download, AlertTriangle } from 'lucide-react'
 
 export default function Debtors() {
-  const [debtors, setDebtors] = useState<any[]>([])
+  const toast = useToast()
+  const [debtors, setDebtors] = useState<DebtorWithTransactions[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [isAdding, setIsAdding] = useState(false)
-  const [selectedDebtor, setSelectedDebtor] = useState<any>(null)
+  const [selectedDebtor, setSelectedDebtor] = useState<DebtorWithTransactions | null>(null)
   
   // New debtor form
   const [newName, setNewName] = useState('')
   const [newPhone, setNewPhone] = useState('')
   const [newTerms, setNewTerms] = useState('15')
+  const [newLimit, setNewLimit] = useState('0')
 
   useEffect(() => {
     fetchDebtors()
@@ -30,12 +35,12 @@ export default function Debtors() {
 
       const { data, error } = await supabase
         .from('debtors')
-        .select('*')
+        .select('*, transactions(*)')
         .eq('user_id', user.id)
         .order('name')
 
       if (error) throw error
-      setDebtors(data || [])
+      setDebtors((data as DebtorWithTransactions[]) || [])
     } catch (error) {
       console.error('Error fetching debtors:', error)
     } finally {
@@ -43,8 +48,38 @@ export default function Debtors() {
     }
   }
 
+  const calcBalance = (debtor: DebtorWithTransactions) => {
+    let sales = 0
+    let payments = 0
+    debtor.transactions?.forEach((tx: Transaction) => {
+      if (tx.type === 'sale') sales += Number(tx.amount)
+      if (tx.type === 'payment') payments += Number(tx.amount)
+    })
+    return sales - payments
+  }
+
   const handleAddDebtor = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    const optimisticDebtor: DebtorWithTransactions = {
+      id: 'temp-' + Date.now(),
+      user_id: '',
+      name: newName,
+      phone: newPhone,
+      default_terms: parseInt(newTerms) || 15,
+      limit_amount: parseFloat(newLimit) || 0,
+      created_at: new Date().toISOString(),
+      transactions: [],
+    }
+
+    // Optimistic: add to list immediately
+    setDebtors(prev => [...prev, optimisticDebtor].sort((a, b) => a.name.localeCompare(b.name)))
+    setIsAdding(false)
+    setNewName('')
+    setNewPhone('')
+    setNewTerms('15')
+    setNewLimit('0')
+
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
@@ -53,33 +88,67 @@ export default function Debtors() {
         .from('debtors')
         .insert([{
           user_id: user.id,
-          name: newName,
-          phone: newPhone,
-          default_terms: parseInt(newTerms) || 15
+          name: optimisticDebtor.name,
+          phone: optimisticDebtor.phone,
+          default_terms: optimisticDebtor.default_terms,
+          limit_amount: optimisticDebtor.limit_amount,
         }])
-        .select()
+        .select('*, transactions(*)')
         .single()
 
       if (error) throw error
       
-      setDebtors(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
-      setIsAdding(false)
-      setNewName('')
-      setNewPhone('')
-      setNewTerms('15')
+      // Replace optimistic entry with real data
+      setDebtors(prev => prev.map(d => d.id === optimisticDebtor.id ? (data as DebtorWithTransactions) : d))
+      toast.success(`${data.name} added successfully!`)
     } catch (error) {
       console.error('Error adding debtor:', error)
-      alert('Could not add debtor.')
+      // Rollback optimistic update
+      setDebtors(prev => prev.filter(d => d.id !== optimisticDebtor.id))
+      toast.error('Could not add debtor. Please try again.')
     }
   }
 
+  const handleExport = () => {
+    const exportData = filteredDebtors.map(d => ({
+      Name: d.name,
+      Phone: d.phone,
+      'Terms (Days)': d.default_terms,
+      'Credit Limit': d.limit_amount || 0,
+      'Outstanding Balance': calcBalance(d),
+    }))
+    exportToCSV(exportData, `Debtors_${new Date().toISOString().split('T')[0]}`)
+    toast.success('Exported to CSV!')
+  }
+
   const filteredDebtors = debtors.filter(d => d.name.toLowerCase().includes(search.toLowerCase()) || d.phone.includes(search))
+
+  const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val)
+  }
 
   if (loading) {
     return (
       <div className={styles.page}>
         <Navigation />
-        <main className={styles.main}>Loading...</main>
+        <main className={styles.main}>
+          <div className={styles.header}>
+            <div>
+              <div className={`${styles.skeletonText} skeleton`} style={{ width: '200px', height: '28px' }}></div>
+              <div className={`${styles.skeletonText} skeleton`} style={{ width: '320px', height: '16px', marginTop: '8px' }}></div>
+            </div>
+          </div>
+          <div className={`${styles.skeletonSearch} skeleton`}></div>
+          <div className={`glass-panel`} style={{ padding: '16px 24px' }}>
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} className={styles.skeletonRow}>
+                <div className={`${styles.skeletonCircle} skeleton`}></div>
+                <div className={`${styles.skeletonText} skeleton`} style={{ width: '140px', height: '16px' }}></div>
+                <div className={`${styles.skeletonText} skeleton`} style={{ width: '100px', height: '16px', marginLeft: 'auto' }}></div>
+              </div>
+            ))}
+          </div>
+        </main>
       </div>
     )
   }
@@ -94,9 +163,14 @@ export default function Debtors() {
             <h1>Debtors Ledger</h1>
             <p>Manage your customers and view individual transactions.</p>
           </div>
-          <button className="btn btn-primary" onClick={() => setIsAdding(true)}>
-            <Plus size={18} /> Add Debtor
-          </button>
+          <div className={styles.headerActions}>
+            <button className="btn" style={{ border: '1px solid var(--border)' }} onClick={handleExport}>
+              <Download size={18} /> Export
+            </button>
+            <button className="btn btn-primary" onClick={() => setIsAdding(true)}>
+              <Plus size={18} /> Add Debtor
+            </button>
+          </div>
         </div>
 
         <div className={styles.searchBar}>
@@ -112,7 +186,11 @@ export default function Debtors() {
         <div className={`${styles.debtorsList} glass-panel`}>
           {filteredDebtors.length === 0 ? (
             <div className={styles.emptyState}>
-              No debtors found. Click "Add Debtor" to create one.
+              <div className={styles.emptyIcon}>
+                <User size={36} />
+              </div>
+              <h3>No debtors found</h3>
+              <p>Click &quot;Add Debtor&quot; to create your first customer.</p>
             </div>
           ) : (
             <table className={styles.table}>
@@ -121,27 +199,40 @@ export default function Debtors() {
                   <th>Name</th>
                   <th>Phone</th>
                   <th>Terms</th>
+                  <th className={styles.textRight}>Balance</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredDebtors.map(debtor => (
-                  <tr key={debtor.id}>
-                    <td>
-                      <div className={styles.nameCell}>
-                        <div className={styles.avatar}><User size={16} /></div>
-                        {debtor.name}
-                      </div>
-                    </td>
-                    <td>{debtor.phone}</td>
-                    <td><span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{debtor.default_terms || 15} days</span></td>
-                    <td>
-                      <button className="btn" style={{ border: '1px solid var(--border)' }} onClick={() => setSelectedDebtor(debtor)}>
-                        View Ledger
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {filteredDebtors.map(debtor => {
+                  const balance = calcBalance(debtor)
+                  const overLimit = debtor.limit_amount > 0 && balance > debtor.limit_amount
+                  return (
+                    <tr key={debtor.id}>
+                      <td>
+                        <div className={styles.nameCell}>
+                          <div className={styles.avatar}><User size={16} /></div>
+                          <span>{debtor.name}</span>
+                          {overLimit && (
+                            <span className={styles.creditWarning} title={`Exceeds credit limit of ${formatCurrency(debtor.limit_amount)}`}>
+                              <AlertTriangle size={14} />
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td>{debtor.phone}</td>
+                      <td><span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{debtor.default_terms || 15} days</span></td>
+                      <td className={`${styles.textRight} ${balance > 0 ? styles.dangerText : styles.successText}`}>
+                        <span style={{ fontWeight: 600 }}>{formatCurrency(balance)}</span>
+                      </td>
+                      <td>
+                        <button className="btn" style={{ border: '1px solid var(--border)' }} onClick={() => setSelectedDebtor(debtor)}>
+                          View Ledger
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           )}
@@ -185,8 +276,18 @@ export default function Debtors() {
                   onChange={e => setNewTerms(e.target.value)}
                 />
               </div>
+              <div className="form-group">
+                <label>Credit Limit (₹0 = unlimited)</label>
+                <input 
+                  type="number" 
+                  className="input-field" 
+                  min="0"
+                  value={newLimit}
+                  onChange={e => setNewLimit(e.target.value)}
+                />
+              </div>
               <div className={styles.modalActions}>
-                <button type="button" className="btn" onClick={() => setIsAdding(false)}>Cancel</button>
+                <button type="button" className="btn" style={{ border: '1px solid var(--border)' }} onClick={() => setIsAdding(false)}>Cancel</button>
                 <button type="submit" className="btn btn-primary">Save Debtor</button>
               </div>
             </form>

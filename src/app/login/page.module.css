@@ -3,19 +3,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  background: linear-gradient(135deg, var(--background) 0%, var(--primary-light) 100%);
   padding: 24px;
 }
 
 .authCard {
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--surface);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
   border-radius: 16px;
   width: 100%;
   max-width: 400px;
   padding: 40px;
+  transition: background-color 0.3s, border-color 0.3s;
 }
 
 .header {
@@ -26,7 +27,7 @@
 .iconWrapper {
   width: 64px;
   height: 64px;
-  background: #eff6ff;
+  background: var(--primary-light);
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -52,13 +53,13 @@
 }
 
 .error {
-  background: #fef2f2;
-  color: #ef4444;
+  background: var(--danger-light);
+  color: var(--danger);
   padding: 12px;
   border-radius: 8px;
   font-size: 14px;
   margin-bottom: 16px;
-  border: 1px solid #fee2e2;
+  border: 1px solid var(--danger);
 }
 
 .submitBtn {

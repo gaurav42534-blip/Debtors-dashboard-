@@ -3,11 +3,12 @@
 import { useState } from 'react'
 import html2canvas from 'html2canvas'
 import { X, Send, Download } from 'lucide-react'
+import { OverdueDebtor, Transaction } from '@/lib/types'
 import styles from './ReceiptGenerator.module.css'
 
 interface ReceiptProps {
-  debtor: any;
-  onClose: () => void;
+  debtor: OverdueDebtor
+  onClose: () => void
 }
 
 export default function ReceiptGenerator({ debtor, onClose }: ReceiptProps) {
@@ -47,20 +48,20 @@ export default function ReceiptGenerator({ debtor, onClose }: ReceiptProps) {
 
   // Calculate breakdown for receipt preview
   const now = new Date()
-  const sales = debtor.transactions?.filter((tx: any) => tx.type === 'sale').sort((a: any, b: any) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime()) || []
-  const payments = debtor.transactions?.filter((tx: any) => tx.type === 'payment') || []
-  let remainingPayment = payments.reduce((acc: number, curr: any) => acc + Number(curr.amount), 0)
+  const sales = debtor.transactions?.filter((tx: Transaction) => tx.type === 'sale').sort((a: Transaction, b: Transaction) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime()) || []
+  const payments = debtor.transactions?.filter((tx: Transaction) => tx.type === 'payment') || []
+  let remainingPayment = payments.reduce((acc: number, curr: Transaction) => acc + Number(curr.amount), 0)
   
-  let overdueSales: any[] = []
-  for (let sale of sales) {
+  const overdueSales: (Transaction & { unpaidAmount: number })[] = []
+  for (const sale of sales) {
     if (remainingPayment >= Number(sale.amount)) {
       remainingPayment -= Number(sale.amount)
     } else {
-      let unpaidPortion = Number(sale.amount) - remainingPayment
+      const unpaidPortion = Number(sale.amount) - remainingPayment
       remainingPayment = 0
       
-      let saleDate = new Date(sale.transaction_date)
-      let dueDate = new Date(saleDate)
+      const saleDate = new Date(sale.transaction_date)
+      const dueDate = new Date(saleDate)
       dueDate.setDate(dueDate.getDate() + debtor.default_terms)
       
       if (now > dueDate) {
@@ -69,7 +70,7 @@ export default function ReceiptGenerator({ debtor, onClose }: ReceiptProps) {
     }
   }
 
-  const lastPayment = payments.sort((a: any, b: any) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime())[0]
+  const lastPayment = [...payments].sort((a: Transaction, b: Transaction) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime())[0]
 
   return (
     <div className={styles.overlay}>

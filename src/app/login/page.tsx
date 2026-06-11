@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useToast } from '@/components/ToastProvider'
 import styles from './page.module.css'
 import { Store, Loader2 } from 'lucide-react'
 
@@ -13,6 +14,7 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null)
   const [isSignUp, setIsSignUp] = useState(false)
   const router = useRouter()
+  const toast = useToast()
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,14 +25,15 @@ export default function Login() {
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
-        alert('Check your email for the confirmation link!')
+        toast.success('Check your email for the confirmation link!')
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
         router.push('/dashboard')
       }
-    } catch (error: any) {
-      setError(error.message)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred'
+      setError(message)
     } finally {
       setLoading(false)
     }
