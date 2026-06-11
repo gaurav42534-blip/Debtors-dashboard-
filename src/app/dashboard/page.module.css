@@ -141,3 +141,19 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+@media (max-width: 768px) {
+  .main {
+    padding: 24px 16px;
+  }
+  .statsGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .header h1 {
+    font-size: 20px;
+  }
+  .table th, .table td {
+    white-space: nowrap;
+  }
+}

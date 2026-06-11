@@ -94,3 +94,9 @@
   color: var(--primary-hover);
   text-decoration: underline;
 }
+
+@media (max-width: 768px) {
+  .authCard {
+    padding: 24px;
+  }
+}

@@ -129,3 +129,26 @@
   font-style: italic;
   font-size: 14px;
 }
+
+@media (max-width: 768px) {
+  .modal {
+    margin: 16px;
+    max-height: calc(100vh - 32px);
+  }
+  .header {
+    padding: 16px;
+  }
+  .content {
+    padding: 16px;
+  }
+  .formRow {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .historyPanel {
+    overflow-x: auto;
+  }
+  .table th, .table td {
+    white-space: nowrap;
+  }
+}

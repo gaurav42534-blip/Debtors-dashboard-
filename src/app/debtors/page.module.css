@@ -124,3 +124,25 @@
   gap: 12px;
   margin-top: 24px;
 }
+
+@media (max-width: 768px) {
+  .main {
+    padding: 24px 16px;
+  }
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .debtorsList {
+    overflow-x: auto;
+    padding: 16px;
+  }
+  .table th, .table td {
+    white-space: nowrap;
+  }
+  .modalContent {
+    padding: 20px;
+    margin: 16px;
+  }
+}

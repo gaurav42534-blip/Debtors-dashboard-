@@ -90,7 +90,8 @@
 
 /* Receipt Template Styles */
 .receipt {
-  width: 380px;
+  width: 100%;
+  max-width: 380px;
   background: white;
   padding: 30px;
   font-family: 'Inter', sans-serif;
@@ -195,4 +196,22 @@
   font-size: 14px;
   font-weight: 600;
   color: #4b5563;
+}
+
+@media (max-width: 768px) {
+  .modal {
+    margin: 16px;
+  }
+  .receipt {
+    padding: 20px;
+  }
+  .rAmountBox {
+    padding: 16px;
+  }
+  .rAmountBox h1 {
+    font-size: 28px;
+  }
+  .actions {
+    flex-direction: column;
+  }
 }
