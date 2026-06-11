@@ -30,7 +30,14 @@
   gap: 10px;
 }
 
+.controlsRow {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
 .searchBar {
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -38,8 +45,11 @@
   padding: 12px 16px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  margin-bottom: 24px;
   transition: background-color 0.3s, border-color 0.3s;
+}
+
+.sortSelect {
+  width: 200px;
 }
 
 .searchBar input {
@@ -237,5 +247,12 @@
   }
   .modalContent {
     padding: 20px;
+  }
+  .controlsRow {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .sortSelect {
+    width: 100%;
   }
 }

@@ -17,6 +17,7 @@ export default function LedgerModal({ debtor, onClose, onDebtorDeleted }: Ledger
   const toast = useToast()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
+  const [isOffline, setIsOffline] = useState(!navigator.onLine)
 
   // Form State
   const [amount, setAmount] = useState('')
@@ -25,11 +26,31 @@ export default function LedgerModal({ debtor, onClose, onDebtorDeleted }: Ledger
   const [refNote, setRefNote] = useState('')
 
   useEffect(() => {
+    const handleOnline = () => setIsOffline(false)
+    const handleOffline = () => setIsOffline(true)
+    
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
     fetchTransactions()
-  }, [])
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [debtor.id])
 
   const fetchTransactions = async () => {
     try {
+      const cacheKey = `tx_cache_${debtor.id}`
+      const cached = localStorage.getItem(cacheKey)
+      if (cached) {
+        setTransactions(JSON.parse(cached))
+        setLoading(false)
+      }
+
+      if (!navigator.onLine) return
+
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
@@ -37,6 +58,8 @@ export default function LedgerModal({ debtor, onClose, onDebtorDeleted }: Ledger
         .order('transaction_date', { ascending: false })
 
       if (error) throw error
+      
+      localStorage.setItem(cacheKey, JSON.stringify(data))
       setTransactions((data as Transaction[]) || [])
     } catch (error) {
       console.error('Error fetching transactions:', error)
@@ -57,6 +80,11 @@ export default function LedgerModal({ debtor, onClose, onDebtorDeleted }: Ledger
 
   const handleAddTransaction = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (isOffline) {
+      toast.error('You are offline. Cannot add new transaction.')
+      return
+    }
 
     const newAmount = parseFloat(amount)
     const currentBalance = getBalance()
@@ -174,10 +202,16 @@ export default function LedgerModal({ debtor, onClose, onDebtorDeleted }: Ledger
         <div className={styles.header}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
             <h2>Ledger: {debtor.name}</h2>
+            {isOffline && (
+              <span style={{ fontSize: '12px', background: 'var(--warning-light)', color: 'var(--warning)', padding: '2px 8px', borderRadius: '4px' }}>
+                Offline Mode
+              </span>
+            )}
             <button 
               className="btn" 
               style={{ border: '1px solid #fca5a5', color: 'var(--danger)', background: 'var(--danger-light)', padding: '4px 12px', fontSize: '13px' }} 
               onClick={handleDeleteDebtor}
+              disabled={isOffline}
             >
               Delete Debtor
             </button>
@@ -229,7 +263,7 @@ export default function LedgerModal({ debtor, onClose, onDebtorDeleted }: Ledger
               </div>
             </div>
 
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '16px' }}>
+            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '16px' }} disabled={isOffline}>
               <Plus size={16} /> Add Transaction
             </button>
           </form>
@@ -260,7 +294,7 @@ export default function LedgerModal({ debtor, onClose, onDebtorDeleted }: Ledger
                       <td style={{ color: 'var(--text-secondary)' }}>{tx.ref_note || '-'}</td>
                       <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatCurrency(Number(tx.amount))}</td>
                       <td>
-                        <button className={styles.deleteBtn} onClick={() => handleDelete(tx.id)}>
+                        <button className={styles.deleteBtn} onClick={() => handleDelete(tx.id)} disabled={isOffline}>
                           <Trash2 size={16} />
                         </button>
                       </td>

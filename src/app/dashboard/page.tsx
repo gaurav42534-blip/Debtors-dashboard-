@@ -22,13 +22,36 @@ export default function Dashboard() {
   const [overdueDebtors, setOverdueDebtors] = useState<OverdueDebtor[]>([])
   const [receiptDebtor, setReceiptDebtor] = useState<OverdueDebtor | null>(null)
   const [trendData, setTrendData] = useState<{ label: string; value: number }[]>([])
+  const [isOffline, setIsOffline] = useState(false)
 
   useEffect(() => {
+    const handleOnline = () => setIsOffline(false)
+    const handleOffline = () => setIsOffline(true)
+    setIsOffline(!navigator.onLine)
+    
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    
     fetchDashboardData()
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
   }, [])
 
   const fetchDashboardData = async () => {
     try {
+      // 1. Try local cache first for instant/offline load
+      const cached = localStorage.getItem('debtors_cache')
+      if (cached) {
+        processDashboardData(JSON.parse(cached))
+        setLoading(false)
+      }
+
+      // 2. Fetch fresh from network
+      if (!navigator.onLine) return
+
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
@@ -39,86 +62,92 @@ export default function Dashboard() {
 
       if (dError) throw dError
 
-      let globalTotalDue = 0
-      let globalTotalOverdue = 0
-      let overdue30 = 0
-      let overdue60plus = 0
-      let overdueList: OverdueDebtor[] = []
-
-      const now = new Date()
-      now.setHours(0, 0, 0, 0)
-
-      debtors?.forEach((debtor: Debtor & { transactions: Transaction[] }) => {
-        let totalSales = 0
-        let totalPayments = 0
-        
-        debtor.transactions?.forEach((tx: Transaction) => {
-          if (tx.type === 'sale') totalSales += Number(tx.amount)
-          if (tx.type === 'payment') totalPayments += Number(tx.amount)
-        })
-
-        const totalDue = totalSales - totalPayments
-        let overdue = 0
-        let od30 = 0
-        let od60 = 0
-
-        if (totalDue > 0) {
-          globalTotalDue += totalDue
-          let remainingPayment = totalPayments
-          
-          const sales = debtor.transactions
-            ?.filter((tx: Transaction) => tx.type === 'sale')
-            .sort((a: Transaction, b: Transaction) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime()) || []
-            
-          for (const sale of sales) {
-            if (remainingPayment >= Number(sale.amount)) {
-              remainingPayment -= Number(sale.amount)
-            } else {
-              const unpaidPortion = Number(sale.amount) - remainingPayment
-              remainingPayment = 0
-              
-              const saleDate = new Date(sale.transaction_date)
-              const dueDate = new Date(saleDate)
-              dueDate.setDate(dueDate.getDate() + debtor.default_terms)
-              
-              if (now > dueDate) {
-                overdue += unpaidPortion
-                const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))
-                if (daysOverdue > 60) {
-                  od60 += unpaidPortion
-                } else if (daysOverdue > 30) {
-                  od30 += unpaidPortion
-                }
-              }
-            }
-          }
-
-          if (overdue > 0) {
-            globalTotalOverdue += overdue
-            overdue30 += od30
-            overdue60plus += od60
-            overdueList.push({
-              ...debtor,
-              overdueAmount: overdue
-            })
-          }
-        }
-      })
-
-      overdueList.sort((a, b) => b.overdueAmount - a.overdueAmount)
-
-      // Build trend data from the last 6 months
-      const monthlyData = buildTrendData(debtors as (Debtor & { transactions: Transaction[] })[] || [])
-      
-      setStats({ totalDue: globalTotalDue, totalOverdue: globalTotalOverdue, overdue30, overdue60plus: overdue60plus })
-      setOverdueDebtors(overdueList)
-      setTrendData(monthlyData)
+      // 3. Update cache & re-process
+      localStorage.setItem('debtors_cache', JSON.stringify(debtors))
+      processDashboardData(debtors as (Debtor & { transactions: Transaction[] })[])
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
     } finally {
       setLoading(false)
     }
   }
+
+  const processDashboardData = (debtors: (Debtor & { transactions: Transaction[] })[]) => {
+    let globalTotalDue = 0
+    let globalTotalOverdue = 0
+    let overdue30 = 0
+    let overdue60plus = 0
+    let overdueList: OverdueDebtor[] = []
+
+    const now = new Date()
+    now.setHours(0, 0, 0, 0)
+
+    debtors?.forEach((debtor) => {
+      let totalSales = 0
+      let totalPayments = 0
+      
+      debtor.transactions?.forEach((tx: Transaction) => {
+        if (tx.type === 'sale') totalSales += Number(tx.amount)
+        if (tx.type === 'payment') totalPayments += Number(tx.amount)
+      })
+
+      const totalDue = totalSales - totalPayments
+      let overdue = 0
+      let od30 = 0
+      let od60 = 0
+
+      if (totalDue > 0) {
+        globalTotalDue += totalDue
+        let remainingPayment = totalPayments
+        
+        const sales = debtor.transactions
+          ?.filter((tx: Transaction) => tx.type === 'sale')
+          .sort((a: Transaction, b: Transaction) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime()) || []
+          
+        for (const sale of sales) {
+          if (remainingPayment >= Number(sale.amount)) {
+            remainingPayment -= Number(sale.amount)
+          } else {
+            const unpaidPortion = Number(sale.amount) - remainingPayment
+            remainingPayment = 0
+            
+            const saleDate = new Date(sale.transaction_date)
+            const dueDate = new Date(saleDate)
+            dueDate.setDate(dueDate.getDate() + debtor.default_terms)
+            
+            if (now > dueDate) {
+              overdue += unpaidPortion
+              const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))
+              if (daysOverdue > 60) {
+                od60 += unpaidPortion
+              } else if (daysOverdue > 30) {
+                od30 += unpaidPortion
+              }
+            }
+          }
+        }
+
+        if (overdue > 0) {
+          globalTotalOverdue += overdue
+          overdue30 += od30
+          overdue60plus += od60
+          overdueList.push({
+            ...debtor,
+            overdueAmount: overdue
+          })
+        }
+      }
+    })
+
+    overdueList.sort((a, b) => b.overdueAmount - a.overdueAmount)
+
+    const monthlyData = buildTrendData(debtors)
+    
+    setStats({ totalDue: globalTotalDue, totalOverdue: globalTotalOverdue, overdue30, overdue60plus: overdue60plus })
+    setOverdueDebtors(overdueList)
+    setTrendData(monthlyData)
+  }
+
 
   const buildTrendData = (debtors: (Debtor & { transactions: Transaction[] })[]) => {
     const now = new Date()
@@ -182,6 +211,13 @@ export default function Dashboard() {
   return (
     <div className={styles.page}>
       <Navigation />
+      
+      {isOffline && (
+        <div className={styles.offlineBanner}>
+          <AlertCircle size={16} />
+          You are currently offline. Viewing cached data.
+        </div>
+      )}
       
       <main className={styles.main}>
         <div className={styles.header}>

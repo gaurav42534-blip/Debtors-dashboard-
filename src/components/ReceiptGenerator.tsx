@@ -38,11 +38,35 @@ export default function ReceiptGenerator({ debtor, onClose }: ReceiptProps) {
     }
   }
 
-  const handleWhatsApp = () => {
-    if (!debtor.phone) return
+  const handleWhatsApp = async () => {
+    if (!debtor.phone || !imageUrl) return
+
+    const message = "Hi! This is a friendly reminder to clear your pending dues. Please find the details attached. Thank you!"
+
+    // Try Web Share API (works on mobile — shares image directly)
+    if (navigator.share && navigator.canShare) {
+      try {
+        // Convert data URL to a File object
+        const response = await fetch(imageUrl)
+        const blob = await response.blob()
+        const file = new File([blob], `Reminder_${debtor.name}.png`, { type: 'image/png' })
+
+        const shareData = { text: message, files: [file] }
+
+        if (navigator.canShare(shareData)) {
+          await navigator.share(shareData)
+          return
+        }
+      } catch (err) {
+        // User cancelled or share failed — fall through to wa.me
+        if ((err as Error).name === 'AbortError') return
+      }
+    }
+
+    // Fallback: open WhatsApp with text only (desktop / unsupported browsers)
     let phone = debtor.phone.replace(/\D/g, '')
     if (phone.length === 10) phone = '91' + phone
-    const text = encodeURIComponent("Hi! This is a friendly reminder to clear your pending dues. Please find the details attached. Thank you!")
+    const text = encodeURIComponent(message)
     window.open(`https://wa.me/${phone}?text=${text}`, '_blank')
   }
 
@@ -156,7 +180,7 @@ export default function ReceiptGenerator({ debtor, onClose }: ReceiptProps) {
                   <Send size={18} /> Share on WhatsApp
                 </button>
               </div>
-              <p className={styles.helperText}>After clicking Share on WhatsApp, simply paste (Ctrl+V) the downloaded image into the chat.</p>
+              <p className={styles.helperText}>On phone, the image will be shared directly. On desktop, download the image first, then paste it in the WhatsApp chat.</p>
             </div>
           )}
         </div>

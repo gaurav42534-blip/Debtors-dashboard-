@@ -15,8 +15,10 @@ export default function Debtors() {
   const [debtors, setDebtors] = useState<DebtorWithTransactions[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [sortBy, setSortBy] = useState('name_asc')
   const [isAdding, setIsAdding] = useState(false)
   const [selectedDebtor, setSelectedDebtor] = useState<DebtorWithTransactions | null>(null)
+  const [isOffline, setIsOffline] = useState(false)
   
   // New debtor form
   const [newName, setNewName] = useState('')
@@ -25,11 +27,32 @@ export default function Debtors() {
   const [newLimit, setNewLimit] = useState('0')
 
   useEffect(() => {
+    const handleOnline = () => setIsOffline(false)
+    const handleOffline = () => setIsOffline(true)
+    setIsOffline(!navigator.onLine)
+    
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
     fetchDebtors()
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
   }, [])
 
   const fetchDebtors = async () => {
     try {
+      // 1. Try local cache first for instant/offline load
+      const cached = localStorage.getItem('debtors_cache')
+      if (cached) {
+        setDebtors(JSON.parse(cached))
+        setLoading(false)
+      }
+
+      // 2. Fetch fresh from network
+      if (!navigator.onLine) return
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
@@ -40,6 +63,9 @@ export default function Debtors() {
         .order('name')
 
       if (error) throw error
+
+      // 3. Update cache & re-process
+      localStorage.setItem('debtors_cache', JSON.stringify(data))
       setDebtors((data as DebtorWithTransactions[]) || [])
     } catch (error) {
       console.error('Error fetching debtors:', error)
@@ -60,6 +86,11 @@ export default function Debtors() {
 
   const handleAddDebtor = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (isOffline) {
+      toast.error('You are offline. Cannot add new debtor.')
+      return
+    }
 
     const optimisticDebtor: DebtorWithTransactions = {
       id: 'temp-' + Date.now(),
@@ -121,7 +152,16 @@ export default function Debtors() {
     toast.success('Exported to CSV!')
   }
 
-  const filteredDebtors = debtors.filter(d => d.name.toLowerCase().includes(search.toLowerCase()) || d.phone.includes(search))
+  const filteredDebtors = debtors
+    .filter(d => d.name.toLowerCase().includes(search.toLowerCase()) || d.phone.includes(search))
+    .sort((a, b) => {
+      if (sortBy === 'name_asc') return a.name.localeCompare(b.name)
+      if (sortBy === 'name_desc') return b.name.localeCompare(a.name)
+      if (sortBy === 'balance_desc') return calcBalance(b) - calcBalance(a)
+      if (sortBy === 'balance_asc') return calcBalance(a) - calcBalance(b)
+      if (sortBy === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      return 0
+    })
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val)
@@ -157,6 +197,13 @@ export default function Debtors() {
     <div className={styles.page}>
       <Navigation />
       
+      {isOffline && (
+        <div className={styles.offlineBanner}>
+          <AlertTriangle size={16} />
+          You are currently offline. Viewing cached data. Changes disabled.
+        </div>
+      )}
+      
       <main className={styles.main}>
         <div className={styles.header}>
           <div>
@@ -164,23 +211,36 @@ export default function Debtors() {
             <p>Manage your customers and view individual transactions.</p>
           </div>
           <div className={styles.headerActions}>
-            <button className="btn" style={{ border: '1px solid var(--border)' }} onClick={handleExport}>
+            <button className="btn" style={{ border: '1px solid var(--border)' }} onClick={handleExport} disabled={isOffline}>
               <Download size={18} /> Export
             </button>
-            <button className="btn btn-primary" onClick={() => setIsAdding(true)}>
+            <button className="btn btn-primary" onClick={() => setIsAdding(true)} disabled={isOffline}>
               <Plus size={18} /> Add Debtor
             </button>
           </div>
         </div>
 
-        <div className={styles.searchBar}>
-          <Search size={20} color="var(--text-secondary)" />
-          <input 
-            type="text" 
-            placeholder="Search by name or phone..." 
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+        <div className={styles.controlsRow}>
+          <div className={styles.searchBar}>
+            <Search size={20} color="var(--text-secondary)" />
+            <input 
+              type="text" 
+              placeholder="Search by name or phone..." 
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <select 
+            className={`input-field ${styles.sortSelect}`} 
+            value={sortBy} 
+            onChange={e => setSortBy(e.target.value)}
+          >
+            <option value="name_asc">Name (A-Z)</option>
+            <option value="name_desc">Name (Z-A)</option>
+            <option value="balance_desc">Highest Balance</option>
+            <option value="balance_asc">Lowest Balance</option>
+            <option value="newest">Recently Added</option>
+          </select>
         </div>
 
         <div className={`${styles.debtorsList} glass-panel`}>
