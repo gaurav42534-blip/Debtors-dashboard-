@@ -66,10 +66,7 @@ export default function Navigation() {
           <Users size={20} />
           <span>Debtors</span>
         </Link>
-        <button onClick={toggleTheme} className={styles.bottomTab} aria-label="Toggle theme">
-          {isDark ? <Sun size={20} /> : <Moon size={20} />}
-          <span>Theme</span>
-        </button>
+
         <button onClick={handleLogout} className={styles.bottomTab}>
           <LogOut size={20} />
           <span>Logout</span>
