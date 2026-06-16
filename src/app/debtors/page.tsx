@@ -287,7 +287,7 @@ export default function Debtors() {
                       <td className={`${styles.textRight} ${balance > 0 ? styles.dangerText : styles.successText}`}>
                         <span style={{ fontWeight: 600 }}>{formatCurrency(balance)}</span>
                       </td>
-                      <td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <button className="btn" style={{ border: '1px solid var(--border)' }} onClick={() => setSelectedDebtor(debtor)}>
                             View Ledger
