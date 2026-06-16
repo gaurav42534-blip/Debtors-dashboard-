@@ -363,7 +363,10 @@ export default function Debtors() {
       )}
 
       {receiptDebtor && (
-        <ReceiptGenerator debtor={receiptDebtor} onClose={() => setReceiptDebtor(null)} />
+        <ReceiptGenerator
+          debtor={{ ...receiptDebtor, overdueAmount: calcBalance(receiptDebtor) }}
+          onClose={() => setReceiptDebtor(null)}
+        />
       )}
 
       {selectedDebtor && (
