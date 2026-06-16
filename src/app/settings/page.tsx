@@ -17,26 +17,16 @@ export default function SettingsPage() {
   const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        getShopName().then(name => {
-          setShopName(name)
-          setLoading(false)
-        })
-      }
-    })
-
-    // Also try immediately in case session is already available
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         getShopName().then(name => {
           setShopName(name)
           setLoading(false)
         })
+      } else {
+        setLoading(false)
       }
     })
-
-    return () => subscription.unsubscribe()
   }, [])
 
   const handleSave = async () => {
