@@ -13,10 +13,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install PostgreSQL client
+      - name: Install PostgreSQL 17 client
         run: |
           sudo apt-get update
-          sudo apt-get install -y postgresql-client
+          sudo apt-get install -y wget ca-certificates
+
+          # Add PostgreSQL official repository
+          sudo install -d /usr/share/postgresql-common/pgdg
+
+          sudo wget --quiet -O /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] \
+          http://apt.postgresql.org/pub/repos/apt noble-pgdg main" | \
+          sudo tee /etc/apt/sources.list.d/pgdg.list
+
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
 
       - name: Run pg_dump
         env:
@@ -28,33 +41,18 @@ jobs:
           fi
 
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          BACKUP_FILE="backup_${TIMESTAMP}.sql"
 
-          # Extract hostname from DATABASE_URL
-          DB_HOST=$(echo "$DATABASE_URL" | sed -E 's|.*@([^:/?]+).*|\1|')
+          echo "Creating backup: $BACKUP_FILE"
 
-          echo "Resolving IPv4 for $DB_HOST"
-
-          # Resolve IPv4 only
-          DB_IPV4=$(getent ahostsv4 "$DB_HOST" | awk '{ print $1; exit }')
-
-          if [ -z "$DB_IPV4" ]; then
-            echo "ERROR: Could not resolve IPv4 address"
-            exit 1
-          fi
-
-          echo "Using IPv4: $DB_IPV4"
-
-          # Replace hostname with IPv4 in URL
-          DATABASE_URL_IPV4=$(echo "$DATABASE_URL" | sed "s/$DB_HOST/$DB_IPV4/")
-
-          pg_dump \
-            --dbname="$DATABASE_URL_IPV4" \
+          /usr/lib/postgresql/17/bin/pg_dump \
+            --dbname="$DATABASE_URL" \
             --no-owner \
             --no-acl \
             -F p \
-            -f "backup_${TIMESTAMP}.sql"
+            -f "$BACKUP_FILE"
 
-          echo "Backup file: backup_${TIMESTAMP}.sql"
+          echo "Backup completed: $BACKUP_FILE"
 
       - name: Upload backup artifact
         uses: actions/upload-artifact@v4
