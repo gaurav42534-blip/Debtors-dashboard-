@@ -2,7 +2,7 @@ name: Weekly Database Backup
 
 on:
   schedule:
-    - cron: '0 0 * * 0' # Every Sunday at midnight UTC
+    - cron: '0 0 * * 0'
   workflow_dispatch:
 
 jobs:
@@ -10,26 +10,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Install PostgreSQL 17 client
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget ca-certificates
-
-          # Add PostgreSQL official repository
-          sudo install -d /usr/share/postgresql-common/pgdg
-
-          sudo wget --quiet -O /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
-            https://www.postgresql.org/media/keys/ACCC4CF8.asc
-
-          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] \
-          http://apt.postgresql.org/pub/repos/apt noble-pgdg main" | \
-          sudo tee /etc/apt/sources.list.d/pgdg.list
-
-          sudo apt-get update
           sudo apt-get install -y postgresql-client-17
+
+      - name: Verify pg_dump version
+        run: pg_dump --version
 
       - name: Run pg_dump
         env:
@@ -43,9 +32,7 @@ jobs:
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
           BACKUP_FILE="backup_${TIMESTAMP}.sql"
 
-          echo "Creating backup: $BACKUP_FILE"
-
-          /usr/lib/postgresql/17/bin/pg_dump \
+          pg_dump \
             --dbname="$DATABASE_URL" \
             --no-owner \
             --no-acl \
