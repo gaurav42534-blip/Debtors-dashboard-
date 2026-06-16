@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import html2canvas from 'html2canvas'
 import { X, Send, Download } from 'lucide-react'
 import { OverdueDebtor, Transaction } from '@/lib/types'
+import { getShopName } from '@/lib/shopSettings'
 import styles from './ReceiptGenerator.module.css'
 
 interface ReceiptProps {
@@ -14,6 +15,11 @@ interface ReceiptProps {
 export default function ReceiptGenerator({ debtor, onClose }: ReceiptProps) {
   const [generating, setGenerating] = useState(false)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [shopName, setShopName] = useState('My Shop')
+
+  useEffect(() => {
+    getShopName().then(setShopName)
+  }, [])
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val)
@@ -41,7 +47,8 @@ export default function ReceiptGenerator({ debtor, onClose }: ReceiptProps) {
   const handleWhatsApp = async () => {
     if (!debtor.phone || !imageUrl) return
 
-    const message = "Hi! This is a friendly reminder to clear your pending dues. Please find the details attached. Thank you!"
+    const amount = formatCurrency(debtor.overdueAmount)
+    const message = `नमस्कार ${debtor.name} जी! 🙏\n\nतुमची उधारी ${amount} झाली आहे.\n\nहिशोब सोबतच्या फोटोत आहे.\n\nधन्यवाद! 🙏\n— ${shopName}`
 
     // Try Web Share API (works on mobile — shares image directly)
     if (navigator.share && navigator.canShare) {
@@ -109,27 +116,27 @@ export default function ReceiptGenerator({ debtor, onClose }: ReceiptProps) {
           <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
             <div id="receipt-node" className={styles.receipt}>
               <div className={styles.rHeader}>
-                <h2>Supermarket Receivables</h2>
-                <p>Payment Reminder</p>
+                <h2>{shopName}</h2>
+                <p>उधारीची चिठ्ठी</p>
               </div>
               <div className={styles.rBody}>
-                <p><strong>To:</strong> {debtor.name}</p>
-                <p><strong>Date:</strong> {new Date().toLocaleDateString('en-IN')}</p>
-                
+                <p><strong>नाव:</strong> {debtor.name}</p>
+                <p><strong>तारीख:</strong> {new Date().toLocaleDateString('en-IN')}</p>
+
                 <div className={styles.rAmountBox}>
-                  <p>Total Overdue</p>
+                  <p>एकूण उधारी</p>
                   <h1>{formatCurrency(debtor.overdueAmount)}</h1>
                 </div>
 
                 {overdueSales.length > 0 && (
                   <div className={styles.rBreakdown}>
-                    <h4>Overdue Breakdown:</h4>
+                    <h4>उधारीचा हिशोब:</h4>
                     <table className={styles.rTable}>
                       <thead>
                         <tr>
-                          <th>Date</th>
-                          <th>Ref</th>
-                          <th style={{ textAlign: 'right' }}>Unpaid</th>
+                          <th>तारीख</th>
+                          <th>नोंद</th>
+                          <th style={{ textAlign: 'right' }}>बाकी रक्कम</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -147,22 +154,20 @@ export default function ReceiptGenerator({ debtor, onClose }: ReceiptProps) {
 
                 {lastPayment && (
                   <div className={styles.rLastPayment}>
-                    <strong>Last Payment Received:</strong><br />
-                    {formatCurrency(Number(lastPayment.amount))} on {new Date(lastPayment.transaction_date).toLocaleDateString('en-IN')}
+                    <strong>शेवटची रक्कम मिळाली:</strong><br />
+                    {formatCurrency(Number(lastPayment.amount))} — {new Date(lastPayment.transaction_date).toLocaleDateString('en-IN')}
                   </div>
                 )}
-
-                <p className={styles.rDetails}>Please clear your pending dues at the earliest.</p>
               </div>
               <div className={styles.rFooter}>
-                Thank you for your business!
+                येत राहा, धन्यवाद! 😊
               </div>
             </div>
           </div>
 
           {!imageUrl ? (
             <div className={styles.generateState}>
-              <p>Ready to generate a professional payment reminder photo for <strong>{debtor.name}</strong>.</p>
+              <p><strong>{debtor.name}</strong> यांच्यासाठी उधारीची चिठ्ठी तयार करा.</p>
               <button className="btn btn-primary" onClick={handleGenerate} disabled={generating}>
                 {generating ? 'Generating...' : 'Generate Photo'}
               </button>

@@ -75,6 +75,11 @@
   color: var(--text-primary);
 }
 
+.settingsActive {
+  color: var(--primary);
+  background-color: var(--primary-light);
+}
+
 .logoutBtn {
   display: flex;
   align-items: center;

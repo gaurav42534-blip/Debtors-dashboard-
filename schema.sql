@@ -33,12 +33,25 @@ ON public.debtors
 FOR ALL USING (auth.uid() = user_id);
 
 -- Users can only see and manage transactions for their own debtors
-CREATE POLICY "Users can manage their own debtor transactions" 
+CREATE POLICY "Users can manage their own debtor transactions"
 ON public.transactions
 FOR ALL USING (
   EXISTS (
-    SELECT 1 FROM public.debtors 
-    WHERE debtors.id = transactions.debtor_id 
+    SELECT 1 FROM public.debtors
+    WHERE debtors.id = transactions.debtor_id
     AND debtors.user_id = auth.uid()
   )
 );
+
+-- 5. Shop Settings table
+CREATE TABLE public.shop_settings (
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  shop_name TEXT NOT NULL DEFAULT 'My Shop',
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.shop_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can manage their own shop settings"
+ON public.shop_settings
+FOR ALL USING (auth.uid() = user_id);

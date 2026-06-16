@@ -2,14 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
-import { LogOut, Home, Users, Sun, Moon } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { Settings, Home, Users, Sun, Moon } from 'lucide-react'
 import styles from './Navigation.module.css'
 
 export default function Navigation() {
   const pathname = usePathname()
-  const router = useRouter()
   const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
@@ -24,11 +22,6 @@ export default function Navigation() {
     setIsDark(newTheme)
     document.documentElement.setAttribute('data-theme', newTheme ? 'dark' : 'light')
     localStorage.setItem('theme', newTheme ? 'dark' : 'light')
-  }
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
   }
 
   return (
@@ -50,9 +43,9 @@ export default function Navigation() {
           <button onClick={toggleTheme} className={styles.themeToggle} aria-label="Toggle theme">
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <button onClick={handleLogout} className={styles.logoutBtn}>
-            <LogOut size={18} /> <span className={styles.logoutLabel}>Logout</span>
-          </button>
+          <Link href="/settings" className={`${styles.themeToggle} ${pathname === '/settings' ? styles.settingsActive : ''}`} aria-label="Settings">
+            <Settings size={18} />
+          </Link>
         </div>
       </div>
 
@@ -67,10 +60,10 @@ export default function Navigation() {
           <span>Debtors</span>
         </Link>
 
-        <button onClick={handleLogout} className={styles.bottomTab}>
-          <LogOut size={20} />
-          <span>Logout</span>
-        </button>
+        <Link href="/settings" className={`${styles.bottomTab} ${pathname === '/settings' ? styles.bottomTabActive : ''}`}>
+          <Settings size={20} />
+          <span>Settings</span>
+        </Link>
       </div>
     </nav>
   )
