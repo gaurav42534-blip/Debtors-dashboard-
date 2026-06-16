@@ -9,6 +9,7 @@ import Navigation from '@/components/Navigation'
 import LedgerModal from '@/components/LedgerModal'
 import styles from './page.module.css'
 import { Plus, Search, User, Download, AlertTriangle } from 'lucide-react'
+import ReceiptGenerator from '@/components/ReceiptGenerator'
 
 export default function Debtors() {
   const toast = useToast()
@@ -18,6 +19,7 @@ export default function Debtors() {
   const [sortBy, setSortBy] = useState('name_asc')
   const [isAdding, setIsAdding] = useState(false)
   const [selectedDebtor, setSelectedDebtor] = useState<DebtorWithTransactions | null>(null)
+  const [receiptDebtor, setReceiptDebtor] = useState<DebtorWithTransactions | null>(null)
   const [isOffline, setIsOffline] = useState(false)
   
   // New debtor form
@@ -286,9 +288,14 @@ export default function Debtors() {
                         <span style={{ fontWeight: 600 }}>{formatCurrency(balance)}</span>
                       </td>
                       <td>
-                        <button className="btn" style={{ border: '1px solid var(--border)' }} onClick={() => setSelectedDebtor(debtor)}>
-                          View Ledger
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button className="btn" style={{ border: '1px solid var(--border)' }} onClick={() => setSelectedDebtor(debtor)}>
+                            View Ledger
+                          </button>
+                          <button className="btn btn-primary" onClick={() => setReceiptDebtor(debtor)}>
+                            Send Reminder
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -355,8 +362,12 @@ export default function Debtors() {
         </div>
       )}
 
+      {receiptDebtor && (
+        <ReceiptGenerator debtor={receiptDebtor} onClose={() => setReceiptDebtor(null)} />
+      )}
+
       {selectedDebtor && (
-        <LedgerModal 
+        <LedgerModal
           debtor={selectedDebtor} 
           onClose={() => setSelectedDebtor(null)} 
           onDebtorDeleted={(id) => {
