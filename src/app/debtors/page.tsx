@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Debtor, Transaction, DebtorWithTransactions } from '@/lib/types'
+import { Debtor, Transaction, DebtorWithTransactions, OverdueDebtor } from '@/lib/types'
 import { exportToCSV } from '@/lib/exportData'
 import { useToast } from '@/components/ToastProvider'
 import Navigation from '@/components/Navigation'
@@ -19,7 +19,7 @@ export default function Debtors() {
   const [sortBy, setSortBy] = useState('name_asc')
   const [isAdding, setIsAdding] = useState(false)
   const [selectedDebtor, setSelectedDebtor] = useState<DebtorWithTransactions | null>(null)
-  const [receiptDebtor, setReceiptDebtor] = useState<DebtorWithTransactions | null>(null)
+  const [receiptDebtor, setReceiptDebtor] = useState<OverdueDebtor | null>(null)
   const [isOffline, setIsOffline] = useState(false)
 
   // New debtor form
@@ -292,7 +292,19 @@ export default function Debtors() {
                           <button className="btn" style={{ border: '1px solid var(--border)' }} onClick={() => setSelectedDebtor(debtor)}>
                             View Ledger
                           </button>
-                          <button className="btn btn-primary" onClick={() => setReceiptDebtor(debtor)}>
+                          <button className="btn btn-primary" onClick={() => {
+                            const sales = (debtor.transactions ?? []).filter(t => t.type === 'sale').sort((a, b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime())
+                            const now = new Date()
+                            let remaining = (debtor.transactions ?? []).filter(t => t.type === 'payment').reduce((s, t) => s + Number(t.amount), 0)
+                            let overdue = 0
+                            for (const s of sales) {
+                              if (remaining >= Number(s.amount)) { remaining -= Number(s.amount); continue }
+                              const unpaid = Number(s.amount) - remaining; remaining = 0
+                              const due = new Date(s.transaction_date); due.setDate(due.getDate() + debtor.default_terms)
+                              if (now > due) overdue += unpaid
+                            }
+                            setReceiptDebtor({ ...debtor, overdueAmount: overdue })
+                          }}>
                             Send Reminder
                           </button>
                         </div>
