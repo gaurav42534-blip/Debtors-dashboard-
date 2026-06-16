@@ -262,7 +262,7 @@ export default function Debtors() {
                   <th>Phone</th>
                   <th>Terms</th>
                   <th className={styles.textRight}>Balance</th>
-                  <th>Action</th>
+                  <th style={{ whiteSpace: 'nowrap', width: '1%' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -287,7 +287,7 @@ export default function Debtors() {
                       <td className={`${styles.textRight} ${balance > 0 ? styles.dangerText : styles.successText}`}>
                         <span style={{ fontWeight: 600 }}>{formatCurrency(balance)}</span>
                       </td>
-                      <td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <button className="btn" style={{ border: '1px solid var(--border)' }} onClick={() => setSelectedDebtor(debtor)}>
                             View Ledger
@@ -375,7 +375,10 @@ export default function Debtors() {
       )}
 
       {receiptDebtor && (
-        <ReceiptGenerator debtor={receiptDebtor} onClose={() => setReceiptDebtor(null)} />
+        <ReceiptGenerator
+          debtor={{ ...receiptDebtor, overdueAmount: calcBalance(receiptDebtor) }}
+          onClose={() => setReceiptDebtor(null)}
+        />
       )}
 
       {selectedDebtor && (
