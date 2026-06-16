@@ -21,7 +21,7 @@ export default function Debtors() {
   const [selectedDebtor, setSelectedDebtor] = useState<DebtorWithTransactions | null>(null)
   const [receiptDebtor, setReceiptDebtor] = useState<DebtorWithTransactions | null>(null)
   const [isOffline, setIsOffline] = useState(false)
-  
+
   // New debtor form
   const [newName, setNewName] = useState('')
   const [newPhone, setNewPhone] = useState('')
@@ -32,7 +32,7 @@ export default function Debtors() {
     const handleOnline = () => setIsOffline(false)
     const handleOffline = () => setIsOffline(true)
     setIsOffline(!navigator.onLine)
-    
+
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
 
@@ -130,7 +130,7 @@ export default function Debtors() {
         .single()
 
       if (error) throw error
-      
+
       // Replace optimistic entry with real data
       setDebtors(prev => prev.map(d => d.id === optimisticDebtor.id ? (data as DebtorWithTransactions) : d))
       toast.success(`${data.name} added successfully!`)
@@ -198,14 +198,14 @@ export default function Debtors() {
   return (
     <div className={styles.page}>
       <Navigation />
-      
+
       {isOffline && (
         <div className={styles.offlineBanner}>
           <AlertTriangle size={16} />
           You are currently offline. Viewing cached data. Changes disabled.
         </div>
       )}
-      
+
       <main className={styles.main}>
         <div className={styles.header}>
           <div>
@@ -225,16 +225,16 @@ export default function Debtors() {
         <div className={styles.controlsRow}>
           <div className={styles.searchBar}>
             <Search size={20} color="var(--text-secondary)" />
-            <input 
-              type="text" 
-              placeholder="Search by name or phone..." 
+            <input
+              type="text"
+              placeholder="Search by name or phone..."
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
           </div>
-          <select 
-            className={`input-field ${styles.sortSelect}`} 
-            value={sortBy} 
+          <select
+            className={`input-field ${styles.sortSelect}`}
+            value={sortBy}
             onChange={e => setSortBy(e.target.value)}
           >
             <option value="name_asc">Name (A-Z)</option>
@@ -314,30 +314,30 @@ export default function Debtors() {
             <form onSubmit={handleAddDebtor}>
               <div className="form-group">
                 <label>Full Name or Shop Name</label>
-                <input 
-                  type="text" 
-                  className="input-field" 
-                  required 
+                <input
+                  type="text"
+                  className="input-field"
+                  required
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
                 />
               </div>
               <div className="form-group">
                 <label>Phone Number (for WhatsApp)</label>
-                <input 
-                  type="tel" 
-                  className="input-field" 
-                  required 
+                <input
+                  type="tel"
+                  className="input-field"
+                  required
                   value={newPhone}
                   onChange={e => setNewPhone(e.target.value)}
                 />
               </div>
               <div className="form-group">
                 <label>Due Period Allowance (Days)</label>
-                <input 
-                  type="number" 
-                  className="input-field" 
-                  required 
+                <input
+                  type="number"
+                  className="input-field"
+                  required
                   min="0"
                   value={newTerms}
                   onChange={e => setNewTerms(e.target.value)}
@@ -345,9 +345,9 @@ export default function Debtors() {
               </div>
               <div className="form-group">
                 <label>Credit Limit (₹0 = unlimited)</label>
-                <input 
-                  type="number" 
-                  className="input-field" 
+                <input
+                  type="number"
+                  className="input-field"
                   min="0"
                   value={newLimit}
                   onChange={e => setNewLimit(e.target.value)}
@@ -368,8 +368,8 @@ export default function Debtors() {
 
       {selectedDebtor && (
         <LedgerModal
-          debtor={selectedDebtor} 
-          onClose={() => setSelectedDebtor(null)} 
+          debtor={selectedDebtor}
+          onClose={() => setSelectedDebtor(null)}
           onDebtorDeleted={(id) => {
             setDebtors(prev => prev.filter(d => d.id !== id));
             setSelectedDebtor(null);

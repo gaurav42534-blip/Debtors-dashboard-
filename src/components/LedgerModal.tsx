@@ -28,7 +28,7 @@ export default function LedgerModal({ debtor, onClose, onDebtorDeleted }: Ledger
   useEffect(() => {
     const handleOnline = () => setIsOffline(false)
     const handleOffline = () => setIsOffline(true)
-    
+
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
 
@@ -58,7 +58,7 @@ export default function LedgerModal({ debtor, onClose, onDebtorDeleted }: Ledger
         .order('transaction_date', { ascending: false })
 
       if (error) throw error
-      
+
       localStorage.setItem(cacheKey, JSON.stringify(data))
       setTransactions((data as Transaction[]) || [])
     } catch (error) {
@@ -128,7 +128,7 @@ export default function LedgerModal({ debtor, onClose, onDebtorDeleted }: Ledger
         .single()
 
       if (error) throw error
-      
+
       // Replace optimistic entry
       setTransactions(prev => prev.map(t => t.id === optimisticTx.id ? (data as Transaction) : t))
       toast.success(`${type === 'sale' ? 'Sale' : 'Payment'} of ${formatCurrency(newAmount)} recorded!`)
@@ -144,7 +144,7 @@ export default function LedgerModal({ debtor, onClose, onDebtorDeleted }: Ledger
     if (!confirm('Are you sure you want to delete this transaction?')) return
 
     const deletedTx = transactions.find(t => t.id === txId)
-    
+
     // Optimistic delete
     setTransactions(prev => prev.filter(t => t.id !== txId))
 
@@ -207,9 +207,9 @@ export default function LedgerModal({ debtor, onClose, onDebtorDeleted }: Ledger
                 Offline Mode
               </span>
             )}
-            <button 
-              className="btn" 
-              style={{ border: '1px solid #fca5a5', color: 'var(--danger)', background: 'var(--danger-light)', padding: '4px 12px', fontSize: '13px' }} 
+            <button
+              className="btn"
+              style={{ border: '1px solid #fca5a5', color: 'var(--danger)', background: 'var(--danger-light)', padding: '4px 12px', fontSize: '13px' }}
               onClick={handleDeleteDebtor}
               disabled={isOffline}
             >
@@ -251,7 +251,7 @@ export default function LedgerModal({ debtor, onClose, onDebtorDeleted }: Ledger
                 <input type="date" className="input-field" value={date} onChange={e => setDate(e.target.value)} required />
               </div>
             </div>
-            
+
             <div className={styles.formRow}>
               <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
                 <label>Amount</label>
@@ -272,36 +272,36 @@ export default function LedgerModal({ debtor, onClose, onDebtorDeleted }: Ledger
             <h3>Transaction History</h3>
             {loading ? <p>Loading...</p> : (
               transactions.length === 0 ? <p className={styles.empty}>No transactions recorded.</p> :
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Type</th>
-                    <th>Note</th>
-                    <th style={{ textAlign: 'right' }}>Amount</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transactions.map(tx => (
-                    <tr key={tx.id}>
-                      <td>{new Date(tx.transaction_date).toLocaleDateString('en-IN')}</td>
-                      <td>
-                        <span className={`${styles.badge} ${tx.type === 'sale' ? styles.badgeDanger : styles.badgeSuccess}`}>
-                          {tx.type === 'sale' ? 'Sale' : 'Payment'}
-                        </span>
-                      </td>
-                      <td style={{ color: 'var(--text-secondary)' }}>{tx.ref_note || '-'}</td>
-                      <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatCurrency(Number(tx.amount))}</td>
-                      <td>
-                        <button className={styles.deleteBtn} onClick={() => handleDelete(tx.id)} disabled={isOffline}>
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>Note</th>
+                      <th style={{ textAlign: 'right' }}>Amount</th>
+                      <th></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {transactions.map(tx => (
+                      <tr key={tx.id}>
+                        <td>{new Date(tx.transaction_date).toLocaleDateString('en-IN')}</td>
+                        <td>
+                          <span className={`${styles.badge} ${tx.type === 'sale' ? styles.badgeDanger : styles.badgeSuccess}`}>
+                            {tx.type === 'sale' ? 'Sale' : 'Payment'}
+                          </span>
+                        </td>
+                        <td style={{ color: 'var(--text-secondary)' }}>{tx.ref_note || '-'}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatCurrency(Number(tx.amount))}</td>
+                        <td>
+                          <button className={styles.deleteBtn} onClick={() => handleDelete(tx.id)} disabled={isOffline}>
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
             )}
           </div>
         </div>
