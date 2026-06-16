@@ -49,7 +49,7 @@ export default function ReceiptGenerator({ debtor, onClose }: ReceiptProps) {
     if (!debtor.phone || !imageUrl) return
 
     const amount = formatCurrency(debtor.overdueAmount)
-    const message = `नमस्कार ${debtor.name} जी! 🙏\n\nतुमची उधारी ${amount} झाली आहे.\n\nहिशोब सोबतच्या फोटोत आहे.\n\nधन्यवाद! 🙏\n— ${shopName}`
+    const message = `🙏 नमस्कार ${debtor.name} जी!\n\nतुमची उधारी ${amount} झाली आहे.\n\nहिशोब सोबतच्या फोटोत आहे.\n\nधन्यवाद! 🙏\n— ${shopName}`
 
     let phone = debtor.phone.replace(/\D/g, '')
     if (phone.length === 10) phone = '91' + phone
@@ -196,7 +196,7 @@ export default function ReceiptGenerator({ debtor, onClose }: ReceiptProps) {
               </div>
               <p className={styles.helperText}>
                 {copied
-                  ? '✅ Image copied! WhatsApp is opening — just press Ctrl+V to paste it.'
+                  ? '🙏 Image copied! WhatsApp is opening — just press Ctrl+V to paste it.'
                   : 'On phone, image shares directly. On desktop, image is copied to clipboard — just paste it in the chat.'}
               </p>
             </div>
