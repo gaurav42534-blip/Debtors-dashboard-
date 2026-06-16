@@ -10,8 +10,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
 
       - name: Run pg_dump
         env:
@@ -24,9 +29,26 @@ jobs:
 
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
-          # Force IPv4 with -4
-          pg_dump -4 \
-            --dbname="$DATABASE_URL" \
+          # Extract hostname from DATABASE_URL
+          DB_HOST=$(echo "$DATABASE_URL" | sed -E 's|.*@([^:/?]+).*|\1|')
+
+          echo "Resolving IPv4 for $DB_HOST"
+
+          # Resolve IPv4 only
+          DB_IPV4=$(getent ahostsv4 "$DB_HOST" | awk '{ print $1; exit }')
+
+          if [ -z "$DB_IPV4" ]; then
+            echo "ERROR: Could not resolve IPv4 address"
+            exit 1
+          fi
+
+          echo "Using IPv4: $DB_IPV4"
+
+          # Replace hostname with IPv4 in URL
+          DATABASE_URL_IPV4=$(echo "$DATABASE_URL" | sed "s/$DB_HOST/$DB_IPV4/")
+
+          pg_dump \
+            --dbname="$DATABASE_URL_IPV4" \
             --no-owner \
             --no-acl \
             -F p \
