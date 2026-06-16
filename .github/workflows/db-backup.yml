@@ -3,7 +3,7 @@ name: Weekly Database Backup
 on:
   schedule:
     - cron: '0 0 * * 0' # Every Sunday at midnight UTC
-  workflow_dispatch: # Allow manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   backup:
@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Install PostgreSQL client
-        run: sudo apt-get install -y postgresql-client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
       - name: Run pg_dump
         env:
@@ -21,8 +21,17 @@ jobs:
             echo "ERROR: DATABASE_URL secret is not set or is empty"
             exit 1
           fi
+
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-          pg_dump --dbname="$DATABASE_URL" --no-owner --no-acl -F p -f "backup_${TIMESTAMP}.sql"
+
+          # Force IPv4 with -4
+          pg_dump -4 \
+            --dbname="$DATABASE_URL" \
+            --no-owner \
+            --no-acl \
+            -F p \
+            -f "backup_${TIMESTAMP}.sql"
+
           echo "Backup file: backup_${TIMESTAMP}.sql"
 
       - name: Upload backup artifact
