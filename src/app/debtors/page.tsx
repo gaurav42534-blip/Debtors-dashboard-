@@ -262,7 +262,7 @@ export default function Debtors() {
                   <th>Phone</th>
                   <th>Terms</th>
                   <th className={styles.textRight}>Balance</th>
-                  <th>Action</th>
+                  <th style={{ whiteSpace: 'nowrap', width: '1%' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
