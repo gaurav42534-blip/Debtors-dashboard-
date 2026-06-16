@@ -1,34 +1,42 @@
-- name: Run pg_dump
-  env:
-    DATABASE_URL: ${{ secrets.DATABASE_URL }}
-  run: |
-    if [ -z "$DATABASE_URL" ]; then
-      echo "ERROR: DATABASE_URL secret is not set or is empty"
-      exit 1
-    fi
+name: Weekly Database Backup
 
-    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Every Sunday at midnight UTC
+  workflow_dispatch:
 
-    # Extract hostname from DATABASE_URL
-    DB_HOST=$(echo "$DATABASE_URL" | sed -E 's|.*@([^:/?]+).*|\1|')
+jobs:
+  backup:
+    runs-on: ubuntu-latest
 
-    echo "Resolving IPv4 for $DB_HOST"
+    steps:
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
-    # Get IPv4 only
-    export PGHOSTADDR=$(getent ahostsv4 "$DB_HOST" | awk '{ print $1; exit }')
+      - name: Run pg_dump
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "ERROR: DATABASE_URL secret is not set or is empty"
+            exit 1
+          fi
 
-    if [ -z "$PGHOSTADDR" ]; then
-      echo "ERROR: Could not resolve IPv4 address"
-      exit 1
-    fi
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
-    echo "Using IPv4: $PGHOSTADDR"
+          # Force IPv4 with -4
+          pg_dump -4 \
+            --dbname="$DATABASE_URL" \
+            --no-owner \
+            --no-acl \
+            -F p \
+            -f "backup_${TIMESTAMP}.sql"
 
-    pg_dump \
-      --dbname="$DATABASE_URL" \
-      --no-owner \
-      --no-acl \
-      -F p \
-      -f "backup_${TIMESTAMP}.sql"
+          echo "Backup file: backup_${TIMESTAMP}.sql"
 
-    echo "Backup file: backup_${TIMESTAMP}.sql"
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: backup_*.sql
+          retention-days: 90
