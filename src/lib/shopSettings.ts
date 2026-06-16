@@ -2,7 +2,8 @@ import { supabase } from './supabase'
 
 export async function getShopName(): Promise<string> {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user
     if (!user) return 'My Shop'
 
     const { data } = await supabase
@@ -20,7 +21,8 @@ export async function getShopName(): Promise<string> {
 }
 
 export async function saveShopName(shopName: string): Promise<{ error: string | null }> {
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user
   if (!user) return { error: 'Not logged in' }
 
   const { error } = await supabase
