@@ -53,7 +53,7 @@ export default function ReceiptGenerator({ debtor, onClose }: ReceiptProps) {
 
     let phone = debtor.phone.replace(/\D/g, '')
     if (phone.length === 10) phone = '91' + phone
-    const waUrl = `https://wa.me/${phone}?text=${message.replace(/[&=?#%]/g, c => encodeURIComponent(c))}`
+    const waUrl = `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`
 
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 
