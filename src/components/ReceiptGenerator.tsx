@@ -16,6 +16,7 @@ export default function ReceiptGenerator({ debtor, onClose }: ReceiptProps) {
   const [generating, setGenerating] = useState(false)
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [shopName, setShopName] = useState('My Shop')
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     getShopName().then(setShopName)
@@ -50,31 +51,39 @@ export default function ReceiptGenerator({ debtor, onClose }: ReceiptProps) {
     const amount = formatCurrency(debtor.overdueAmount)
     const message = `नमस्कार ${debtor.name} जी! 🙏\n\nतुमची उधारी ${amount} झाली आहे.\n\nहिशोब सोबतच्या फोटोत आहे.\n\nधन्यवाद! 🙏\n— ${shopName}`
 
-    // Try Web Share API (works on mobile — shares image directly)
-    if (navigator.share && navigator.canShare) {
+    let phone = debtor.phone.replace(/\D/g, '')
+    if (phone.length === 10) phone = '91' + phone
+    const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+
+    if (isMobile && navigator.share && navigator.canShare) {
+      // Mobile: use Web Share API to share image + text directly
       try {
-        // Convert data URL to a File object
         const response = await fetch(imageUrl)
         const blob = await response.blob()
         const file = new File([blob], `Reminder_${debtor.name}.png`, { type: 'image/png' })
-
         const shareData = { text: message, files: [file] }
-
         if (navigator.canShare(shareData)) {
           await navigator.share(shareData)
           return
         }
       } catch (err) {
-        // User cancelled or share failed — fall through to wa.me
         if ((err as Error).name === 'AbortError') return
       }
     }
 
-    // Fallback: open WhatsApp with text only (desktop / unsupported browsers)
-    let phone = debtor.phone.replace(/\D/g, '')
-    if (phone.length === 10) phone = '91' + phone
-    const text = encodeURIComponent(message)
-    window.open(`https://wa.me/${phone}?text=${text}`, '_blank')
+    // Desktop: copy image to clipboard, then open WhatsApp Web to the contact
+    try {
+      const response = await fetch(imageUrl)
+      const blob = await response.blob()
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+      setCopied(true)
+      setTimeout(() => setCopied(false), 4000)
+    } catch {
+      // clipboard write not supported — user can manually copy
+    }
+    window.open(waUrl, '_blank')
   }
 
   // Calculate breakdown for receipt preview
@@ -185,7 +194,11 @@ export default function ReceiptGenerator({ debtor, onClose }: ReceiptProps) {
                   <Send size={18} /> Share on WhatsApp
                 </button>
               </div>
-              <p className={styles.helperText}>On phone, the image will be shared directly. On desktop, download the image first, then paste it in the WhatsApp chat.</p>
+              <p className={styles.helperText}>
+                {copied
+                  ? '✅ Image copied! WhatsApp is opening — just press Ctrl+V to paste it.'
+                  : 'On phone, image shares directly. On desktop, image is copied to clipboard — just paste it in the chat.'}
+              </p>
             </div>
           )}
         </div>
