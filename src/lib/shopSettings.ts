@@ -19,14 +19,16 @@ export async function getShopName(): Promise<string> {
   }
 }
 
-export async function saveShopName(shopName: string): Promise<void> {
+export async function saveShopName(shopName: string): Promise<{ error: string | null }> {
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return
+  if (!user) return { error: 'Not logged in' }
 
-  await supabase
+  const { error } = await supabase
     .from('shop_settings')
     .upsert(
       { user_id: user.id, shop_name: shopName, updated_at: new Date().toISOString() },
       { onConflict: 'user_id' }
     )
+
+  return { error: error?.message ?? null }
 }

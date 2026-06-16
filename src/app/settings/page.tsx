@@ -14,6 +14,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     getShopName().then(name => {
@@ -25,10 +26,15 @@ export default function SettingsPage() {
   const handleSave = async () => {
     if (!shopName.trim()) return
     setSaving(true)
-    await saveShopName(shopName.trim())
+    setSaveError(null)
+    const { error } = await saveShopName(shopName.trim())
     setSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    if (error) {
+      setSaveError(error)
+    } else {
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    }
   }
 
   const handleLogout = async () => {
@@ -54,7 +60,7 @@ export default function SettingsPage() {
                 type="text"
                 className={styles.input}
                 value={shopName}
-                onChange={e => { setShopName(e.target.value); setSaved(false) }}
+                onChange={e => { setShopName(e.target.value); setSaved(false); setSaveError(null) }}
                 placeholder="My Shop"
                 disabled={loading}
                 maxLength={60}
@@ -68,6 +74,11 @@ export default function SettingsPage() {
                 {saved ? 'Saved!' : saving ? 'Saving...' : 'Save'}
               </button>
             </div>
+            {saveError && (
+              <p style={{ color: 'red', marginTop: '8px', fontSize: '14px' }}>
+                Save failed: {saveError}
+              </p>
+            )}
           </div>
 
           <div className={styles.card}>
