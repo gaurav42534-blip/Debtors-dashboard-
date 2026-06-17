@@ -1,9 +1,6 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 import ToastProvider from '@/components/ToastProvider'
-
-const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Supermarket Receivables',
@@ -17,7 +14,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#2563eb',
+  themeColor: '#0D1B2A',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -33,7 +30,7 @@ export default function RootLayout({
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
-      <body className={inter.className}>
+      <body>
         <ToastProvider>
           {children}
         </ToastProvider>

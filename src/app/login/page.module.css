@@ -1,50 +1,195 @@
 .container {
   min-height: 100vh;
   display: flex;
+  background: var(--background);
+}
+
+/* === Left branding panel (desktop only) === */
+.brandPanel {
+  display: none;
+  width: 420px;
+  flex-shrink: 0;
+  background: var(--navy);
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 48px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Dot-grid texture */
+.brandPanel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+}
+
+/* Warm glow in lower-left corner */
+.brandPanel::after {
+  content: '';
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+  bottom: -80px;
+  left: -80px;
+  pointer-events: none;
+}
+
+.brandTop {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--background) 0%, var(--primary-light) 100%);
-  padding: 24px;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
 }
 
-.authCard {
-  background: var(--surface);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-lg);
-  border-radius: 16px;
-  width: 100%;
-  max-width: 400px;
-  padding: 40px;
-  transition: background-color 0.3s, border-color 0.3s;
-}
-
-.header {
-  text-align: center;
-  margin-bottom: 32px;
-}
-
-.iconWrapper {
-  width: 64px;
-  height: 64px;
-  background: var(--primary-light);
-  border-radius: 16px;
+.brandMark {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 16px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.brandName {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+.brandName span {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.brandCenter {
+  position: relative;
+  z-index: 1;
+}
+
+.brandTagline {
+  font-size: 28px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+
+.brandTagline em {
+  color: #FFFFFF;
+  font-style: normal;
+}
+
+.brandDesc {
+  font-size: 15px;
+  color: rgba(255,255,255,0.45);
+  line-height: 1.6;
+}
+
+.brandFeatures {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.brandFeature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.5);
+}
+
+.brandFeatureDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+}
+
+/* === Right form panel === */
+.formPanel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+}
+
+.authCard {
+  width: 100%;
+  max-width: 400px;
+  animation: slideUp 0.35s ease both;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile brand header */
+.mobileBrand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 36px;
+}
+
+.mobileBrandMark {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(13, 27, 42, 0.2);
+}
+
+.mobileBrandName {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.mobileBrandName span {
+  color: var(--navy);
+}
+
+.header {
+  margin-bottom: 32px;
 }
 
 .header h1 {
-  font-size: 20px;
+  font-size: 26px;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
 }
 
 .header p {
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .form {
@@ -55,49 +200,61 @@
 .error {
   background: var(--danger-light);
   color: var(--danger);
-  padding: 12px;
+  padding: 12px 14px;
   border-radius: 8px;
   font-size: 14px;
-  margin-bottom: 16px;
-  border: 1px solid var(--danger);
+  margin-bottom: 20px;
+  border: 1px solid rgba(153, 27, 27, 0.2);
 }
 
 .submitBtn {
   margin-top: 8px;
   width: 100%;
-  padding: 12px;
+  padding: 13px;
   font-size: 15px;
+  font-weight: 600;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.submitBtn:disabled {
+  opacity: 0.7;
 }
 
 .spinner {
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
   from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  to   { transform: rotate(360deg); }
 }
 
 .footer {
-  margin-top: 24px;
+  margin-top: 20px;
   text-align: center;
 }
 
 .toggleBtn {
   background: transparent;
-  color: var(--primary);
+  color: var(--text-secondary);
   font-size: 14px;
-  font-weight: 500;
   transition: color 0.2s;
 }
 
 .toggleBtn:hover {
-  color: var(--primary-hover);
-  text-decoration: underline;
+  color: var(--navy);
 }
 
-@media (max-width: 768px) {
-  .authCard {
-    padding: 24px;
+/* === Desktop layout === */
+@media (min-width: 769px) {
+  .brandPanel {
+    display: flex;
+  }
+  .mobileBrand {
+    display: none;
+  }
+  .formPanel {
+    padding: 48px;
   }
 }

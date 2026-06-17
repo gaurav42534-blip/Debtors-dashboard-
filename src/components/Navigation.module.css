@@ -1,11 +1,16 @@
 .navbar {
-  background-color: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background-color: var(--navy);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: var(--shadow-sm);
-  transition: background-color 0.3s, border-color 0.3s;
+  box-shadow: 0 2px 16px rgba(13, 27, 42, 0.3);
+  transition: background-color 0.3s;
+}
+
+[data-theme="dark"] .navbar {
+  background-color: #060C13;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
 .navContainer {
@@ -19,37 +24,76 @@
 }
 
 .navBrand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-weight: 700;
-  font-size: 18px;
-  color: var(--primary);
-  letter-spacing: -0.5px;
+  font-size: 17px;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+}
+
+.navBrandMark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  flex-shrink: 0;
+}
+
+.navBrandText {
+  color: #FFFFFF;
+}
+
+.navBrandAccent {
+  color: rgba(255, 255, 255, 0.65);
 }
 
 .navLinksDesktop {
   display: flex;
-  gap: 8px;
+  gap: 4px;
 }
 
 .navLink {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 7px;
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.55);
   transition: all 0.2s ease;
+  letter-spacing: 0.01em;
 }
 
 .navLink:hover {
-  background-color: var(--surface-hover);
-  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .navLink.active {
-  background-color: var(--primary-light);
-  color: var(--primary);
+  color: #FFFFFF;
+  position: relative;
+}
+
+.navLink.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: #FFFFFF;
 }
 
 .navActions {
@@ -66,18 +110,18 @@
   height: 36px;
   border-radius: 8px;
   background: transparent;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.55);
   transition: all 0.2s;
 }
 
 .themeToggle:hover {
-  background-color: var(--surface-hover);
-  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .settingsActive {
-  color: var(--primary);
-  background-color: var(--primary-light);
+  color: #FFFFFF !important;
+  background-color: rgba(255, 255, 255, 0.12) !important;
 }
 
 .logoutBtn {
@@ -86,17 +130,17 @@
   gap: 6px;
   padding: 8px 16px;
   background: transparent;
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.55);
   font-weight: 500;
   font-size: 14px;
   transition: color 0.2s;
 }
 
 .logoutBtn:hover {
-  color: var(--danger);
+  color: #FC8181;
 }
 
-/* Mobile bottom tab bar - hidden on desktop */
+/* Mobile bottom tab bar */
 .bottomBar {
   display: none;
 }
@@ -113,20 +157,23 @@
     height: 56px;
   }
 
-  /* Fixed bottom tab bar */
   .bottomBar {
     display: flex;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    background-color: var(--surface);
-    border-top: 1px solid var(--border);
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.06);
+    background-color: var(--navy);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 -4px 20px rgba(13, 27, 42, 0.3);
     z-index: 100;
     padding: 6px 0;
     padding-bottom: max(6px, env(safe-area-inset-bottom));
-    transition: background-color 0.3s, border-color 0.3s;
+    transition: background-color 0.3s;
+  }
+
+  [data-theme="dark"] .bottomBar {
+    background-color: #060C13;
   }
 
   .bottomTab {
@@ -139,15 +186,20 @@
     padding: 6px 0;
     font-size: 11px;
     font-weight: 500;
-    color: var(--text-tertiary);
+    color: rgba(255, 255, 255, 0.4);
     background: none;
     border: none;
     cursor: pointer;
     transition: color 0.2s;
     text-decoration: none;
+    letter-spacing: 0.02em;
   }
 
   .bottomTabActive {
-    color: var(--primary);
+    color: #FFFFFF !important;
+  }
+
+  .bottomTabActive svg {
+    filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.3));
   }
 }

@@ -1,62 +1,93 @@
 .page {
   min-height: 100vh;
   padding-bottom: 80px;
+  position: relative;
+  z-index: 1;
 }
 
 .main {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 32px 24px;
+  padding: 36px 24px;
+  animation: fadeUp 0.4s ease both;
 }
 
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* === Offline banner === */
+.offlineBanner {
+  background: var(--warning-light);
+  color: var(--warning);
+  padding: 10px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(180, 83, 9, 0.3);
+}
+
+/* === Page header === */
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
+  align-items: flex-start;
+  margin-bottom: 28px;
 }
 
 .header h1 {
-  font-size: 24px;
+  font-size: 28px;
   color: var(--text-primary);
+  line-height: 1.2;
+  margin-bottom: 4px;
 }
 
-.header p {
+.headerSubtitle {
   color: var(--text-secondary);
+  font-size: 14px;
 }
 
 .headerActions {
   display: flex;
   gap: 10px;
+  flex-shrink: 0;
 }
 
+/* === Controls row === */
 .controlsRow {
   display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .searchBar {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   background: var(--surface);
-  padding: 12px 16px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  transition: background-color 0.3s, border-color 0.3s;
+  padding: 11px 16px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s;
 }
 
-.sortSelect {
-  width: 200px;
+.searchBar:focus-within {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(13, 27, 42, 0.1);
 }
 
 .searchBar input {
   border: none;
   outline: none;
   width: 100%;
-  font-size: 15px;
+  font-size: 14px;
+  font-family: var(--font-sans);
   background: transparent;
   color: var(--text-primary);
 }
@@ -65,9 +96,28 @@
   color: var(--text-tertiary);
 }
 
+.sortSelect {
+  width: 190px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.sortSelect:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(13, 27, 42, 0.1);
+}
+
+/* === Debtors list === */
 .debtorsList {
-  padding: 16px 24px;
-  overflow-x: auto;
+  padding: 0;
+  overflow: hidden;
 }
 
 .table {
@@ -75,37 +125,89 @@
   border-collapse: collapse;
 }
 
+.table thead {
+  background: linear-gradient(to right, var(--navy), var(--navy-mid));
+  border-radius: 14px 14px 0 0;
+  overflow: hidden;
+}
+
+.table thead tr th:first-child {
+  border-radius: 14px 0 0 0;
+  padding-left: 24px;
+}
+.table thead tr th:last-child {
+  border-radius: 0 14px 0 0;
+}
+
 .table th {
   text-align: left;
-  padding: 12px 16px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  border-bottom: 1px solid var(--border);
+  padding: 14px 16px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-bottom: none;
 }
 
 .table td {
   padding: 16px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
+  font-size: 14px;
+  transition: background-color 0.15s;
+}
+
+.table tbody tr {
+  opacity: 0;
+  animation: rowIn 0.3s ease forwards;
+}
+
+.table tbody tr:nth-child(1)  { animation-delay: 0.04s; }
+.table tbody tr:nth-child(2)  { animation-delay: 0.07s; }
+.table tbody tr:nth-child(3)  { animation-delay: 0.10s; }
+.table tbody tr:nth-child(4)  { animation-delay: 0.13s; }
+.table tbody tr:nth-child(5)  { animation-delay: 0.16s; }
+.table tbody tr:nth-child(6)  { animation-delay: 0.19s; }
+.table tbody tr:nth-child(7)  { animation-delay: 0.22s; }
+.table tbody tr:nth-child(8)  { animation-delay: 0.25s; }
+.table tbody tr:nth-child(n+9){ animation-delay: 0.27s; }
+
+@keyframes rowIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.table tbody tr:hover td {
+  background-color: var(--gold-ultra-pale);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .nameCell {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
+/* Avatar with initials */
 .avatar {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: var(--surface-hover);
+  background: var(--navy);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--secondary);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 14px;
   flex-shrink: 0;
+  letter-spacing: 0;
 }
 
 .textRight {
@@ -126,24 +228,29 @@
   justify-content: center;
   color: var(--warning);
   background: var(--warning-light);
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 6px;
   flex-shrink: 0;
 }
 
-/* Enhanced empty state */
+.balanceAmount {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* === Empty state === */
 .emptyState {
   text-align: center;
-  padding: 48px 24px;
+  padding: 64px 24px;
 }
 
 .emptyIcon {
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background: var(--primary-light);
-  color: var(--primary);
+  background: var(--gold-pale);
+  color: var(--gold);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -151,7 +258,7 @@
 }
 
 .emptyState h3 {
-  font-size: 18px;
+  font-size: 20px;
   color: var(--text-primary);
   margin-bottom: 6px;
 }
@@ -161,68 +268,87 @@
   font-size: 14px;
 }
 
-/* Skeleton */
-.skeletonText {
-  border-radius: 6px;
-}
-
-.skeletonSearch {
-  height: 48px;
-  border-radius: 8px;
-  margin-bottom: 24px;
-}
-
-.skeletonRow {
+/* === Skeleton === */
+.skeletonText   { border-radius: 6px; }
+.skeletonSearch { height: 48px; border-radius: 10px; margin-bottom: 20px; }
+.skeletonRow    {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 0;
+  padding: 16px;
   border-bottom: 1px solid var(--border);
 }
+.skeletonCircle { width: 36px; height: 36px; border-radius: 50%; }
 
-.skeletonCircle {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-}
-
-/* Modal */
+/* === Add Debtor Modal === */
 .modalOverlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
+  inset: 0;
+  background: rgba(13, 27, 42, 0.55);
+  backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 24px;
+  animation: fadeIn 0.2s ease;
+  overscroll-behavior: contain;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .modalContent {
   background: var(--surface);
-  border-radius: 12px;
-  padding: 24px;
+  border-radius: 16px;
+  padding: 28px;
   width: 100%;
-  max-width: 400px;
-  box-shadow: var(--shadow-lg);
+  max-width: 420px;
+  box-shadow: 0 24px 64px rgba(13, 27, 42, 0.25);
+  border: 1px solid var(--border);
+  animation: slideUp 0.25s ease;
 }
 
-.modalContent h2 {
-  margin-bottom: 20px;
-  font-size: 18px;
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.modalHeader h2 {
+  font-size: 20px;
+  color: var(--text-primary);
+}
+
+.modalHeaderMark {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--gold-pale);
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .modalActions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 10px;
   margin-top: 24px;
 }
 
+/* === Responsive === */
 @media (max-width: 768px) {
   .main {
     padding: 24px 16px;
@@ -237,22 +363,27 @@
   }
   .headerActions .btn {
     flex: 1;
+    justify-content: center;
   }
-  .debtorsList {
-    padding: 12px;
-  }
-  .table th, .table td {
-    white-space: nowrap;
-    padding: 12px;
-  }
-  .modalContent {
-    padding: 20px;
+  .header h1 {
+    font-size: 22px;
   }
   .controlsRow {
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
   }
   .sortSelect {
     width: 100%;
+  }
+  .debtorsList {
+    overflow-x: auto;
+  }
+  .table th,
+  .table td {
+    white-space: nowrap;
+    padding: 12px 14px;
+  }
+  .modalContent {
+    padding: 20px;
   }
 }

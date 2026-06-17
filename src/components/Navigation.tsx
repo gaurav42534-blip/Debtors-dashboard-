@@ -27,7 +27,10 @@ export default function Navigation() {
   return (
     <nav className={styles.navbar}>
       <div className={styles.navContainer}>
-        <div className={styles.navBrand}>Supermarket Receivables</div>
+        <div className={styles.navBrand}>
+          <span className={styles.navBrandMark}>₹</span>
+          <span className={styles.navBrandText}>Khata<span className={styles.navBrandAccent}>.</span></span>
+        </div>
         
         {/* Desktop nav links */}
         <div className={styles.navLinksDesktop}>

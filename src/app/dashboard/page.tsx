@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Debtor, Transaction, OverdueDebtor } from '@/lib/types'
+import dynamic from 'next/dynamic'
 import Navigation from '@/components/Navigation'
-import ReceiptGenerator from '@/components/ReceiptGenerator'
-import TrendChart from '@/components/TrendChart'
 import styles from './page.module.css'
-import { AlertCircle, IndianRupee, TrendingUp, Clock, CalendarClock, CheckCircle2 } from 'lucide-react'
+
+const ReceiptGenerator = dynamic(() => import('@/components/ReceiptGenerator'))
+const TrendChart = dynamic(() => import('@/components/TrendChart'))
+import { AlertCircle, CheckCircle2, Wallet, CircleAlert, CalendarClock, CalendarX } from 'lucide-react'
 
 interface AgingStats {
   totalDue: number
@@ -52,8 +54,9 @@ export default function Dashboard() {
       // 2. Fetch fresh from network
       if (!navigator.onLine) return
 
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      const { data: authData, error: authError } = await supabase.auth.getUser()
+      if (authError || !authData?.user) return
+      const user = authData.user
 
       const { data: debtors, error: dError } = await supabase
         .from('debtors')
@@ -66,7 +69,8 @@ export default function Dashboard() {
       localStorage.setItem('debtors_cache', JSON.stringify(debtors))
       processDashboardData(debtors as (Debtor & { transactions: Transaction[] })[])
     } catch (error) {
-      console.error('Error fetching dashboard data:', error)
+      if (error instanceof TypeError && (error as TypeError).message === 'Failed to fetch') return
+      console.warn('Dashboard fetch error:', error)
     } finally {
       setLoading(false)
     }
@@ -182,6 +186,15 @@ export default function Dashboard() {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount)
   }
 
+  const getGreeting = () => {
+    const h = new Date().getHours()
+    if (h < 12) return 'Good morning'
+    if (h < 17) return 'Good afternoon'
+    return 'Good evening'
+  }
+
+  const todayLabel = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })
+
   if (loading) {
     return (
       <div className={styles.page}>
@@ -194,11 +207,8 @@ export default function Dashboard() {
           <div className={styles.statsGrid}>
             {[1, 2, 3, 4].map(i => (
               <div key={i} className={`${styles.statCard} glass-panel`}>
-                <div className={`${styles.skeletonIcon} skeleton`}></div>
-                <div>
-                  <div className={`${styles.skeletonText} skeleton`} style={{ width: '120px', height: '14px' }}></div>
-                  <div className={`${styles.skeletonText} skeleton`} style={{ width: '160px', height: '28px', marginTop: '8px' }}></div>
-                </div>
+                <div className={`${styles.skeletonText} skeleton`} style={{ width: '100px', height: '12px' }}></div>
+                <div className={`${styles.skeletonText} skeleton`} style={{ width: '150px', height: '28px', marginTop: '12px' }}></div>
               </div>
             ))}
           </div>
@@ -221,48 +231,37 @@ export default function Dashboard() {
       
       <main className={styles.main}>
         <div className={styles.header}>
-          <h1>Quick Actions Dashboard</h1>
-          <p>Here is your current receivables position.</p>
+          <div>
+            <p className={styles.greeting}>{getGreeting()}</p>
+            <h1>Receivables Overview</h1>
+          </div>
+          <span className={styles.headerDate}>{todayLabel}</span>
         </div>
 
+        {/* Hero stat + supporting stats */}
         <div className={styles.statsGrid}>
-          <div className={`${styles.statCard} glass-panel`}>
-            <div className={styles.statIcon} style={{ background: 'var(--success-light)', color: 'var(--success)' }}>
-              <TrendingUp size={24} />
-            </div>
-            <div className={styles.statInfo}>
-              <p>Total Outstanding</p>
-              <h2>{formatCurrency(stats.totalDue)}</h2>
-            </div>
+          {/* Hero: Total Outstanding */}
+          <div className={`${styles.statCard} ${styles.statCardHero} glass-panel`}>
+            <p className={styles.statLabel}><Wallet size={14} aria-hidden="true" />Total Outstanding</p>
+            <h2 className={styles.statValueHero}>{formatCurrency(stats.totalDue)}</h2>
+            <p className={styles.statSubtext}>across all debtors</p>
           </div>
 
-          <div className={`${styles.statCard} glass-panel`}>
-            <div className={styles.statIcon} style={{ background: 'var(--danger-light)', color: 'var(--danger)' }}>
-              <IndianRupee size={24} />
+          {/* Supporting 3 */}
+          <div className={styles.statsSub}>
+            <div className={`${styles.statCard} ${styles.statCardRed} glass-panel`}>
+              <p className={styles.statLabel}><CircleAlert size={14} aria-hidden="true" />Total Overdue</p>
+              <h2 className={`${styles.statValue} ${styles.dangerText}`}>{formatCurrency(stats.totalOverdue)}</h2>
             </div>
-            <div className={styles.statInfo}>
-              <p>Total Overdue</p>
-              <h2 className={styles.dangerText}>{formatCurrency(stats.totalOverdue)}</h2>
-            </div>
-          </div>
 
-          <div className={`${styles.statCard} glass-panel`}>
-            <div className={styles.statIcon} style={{ background: 'var(--warning-light)', color: 'var(--warning)' }}>
-              <Clock size={24} />
+            <div className={`${styles.statCard} ${styles.statCardAmber} glass-panel`}>
+              <p className={styles.statLabel}><CalendarClock size={14} aria-hidden="true" />30-Day Overdue</p>
+              <h2 className={`${styles.statValue} ${styles.warningText}`}>{formatCurrency(stats.overdue30)}</h2>
             </div>
-            <div className={styles.statInfo}>
-              <p>30-Day Overdue</p>
-              <h2 style={{ color: 'var(--warning)' }}>{formatCurrency(stats.overdue30)}</h2>
-            </div>
-          </div>
 
-          <div className={`${styles.statCard} glass-panel`}>
-            <div className={styles.statIcon} style={{ background: 'var(--danger-light)', color: 'var(--danger)' }}>
-              <CalendarClock size={24} />
-            </div>
-            <div className={styles.statInfo}>
-              <p>60+ Day Overdue</p>
-              <h2 className={styles.dangerText}>{formatCurrency(stats.overdue60plus)}</h2>
+            <div className={`${styles.statCard} ${styles.statCardRed} glass-panel`}>
+              <p className={styles.statLabel}><CalendarX size={14} aria-hidden="true" />60+ Day Overdue</p>
+              <h2 className={`${styles.statValue} ${styles.dangerText}`}>{formatCurrency(stats.overdue60plus)}</h2>
             </div>
           </div>
         </div>
@@ -272,11 +271,14 @@ export default function Dashboard() {
           <TrendChart data={trendData} title="Outstanding Receivables — Last 6 Months" />
         </div>
 
-        {/* Attention Needed */}
+        {/* Payment Watch */}
         <div className={`${styles.attentionSection} glass-panel`}>
           <div className={styles.sectionHeader}>
-            <AlertCircle color="var(--danger)" />
-            <h2>Attention Needed</h2>
+            <AlertCircle size={18} color="var(--danger)" aria-hidden="true" />
+            <h2>Payment Watch</h2>
+            {overdueDebtors.length > 0 && (
+              <span className={styles.countBadge}>{overdueDebtors.length}</span>
+            )}
           </div>
           
           {overdueDebtors.length === 0 ? (
@@ -307,7 +309,7 @@ export default function Dashboard() {
                         {formatCurrency(debtor.overdueAmount)}
                       </td>
                       <td className={styles.textRight}>
-                        <button className="btn btn-primary" onClick={() => setReceiptDebtor(debtor)}>
+                        <button className="btn btn-primary btn-sm" onClick={() => setReceiptDebtor(debtor)}>
                           Send Reminder
                         </button>
                       </td>

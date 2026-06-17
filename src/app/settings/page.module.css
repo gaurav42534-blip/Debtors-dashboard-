@@ -1,48 +1,86 @@
 .main {
-  padding: 24px 16px;
   min-height: calc(100vh - 64px);
+  padding-bottom: 80px;
+  position: relative;
+  z-index: 1;
 }
 
 .container {
-  max-width: 560px;
+  max-width: 600px;
   margin: 0 auto;
+  padding: 36px 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  animation: fadeUp 0.4s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.pageHeader {
+  margin-bottom: 8px;
 }
 
 .title {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 700;
   color: var(--text-primary);
+  letter-spacing: -0.02em;
   margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
 }
 
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 14px;
+  padding: 22px 24px;
+  transition: box-shadow 0.2s;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
 }
 
 .cardHeader {
   display: flex;
   align-items: center;
-  gap: 8px;
-  color: var(--text-primary);
+  gap: 10px;
   margin-bottom: 6px;
+}
+
+.cardHeaderIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--gold-pale);
+  color: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .cardHeader h2 {
   font-size: 16px;
   font-weight: 600;
   margin: 0;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
 }
 
 .hint {
   font-size: 13px;
   color: var(--text-secondary);
-  margin-bottom: 14px;
+  margin-bottom: 16px;
+  line-height: 1.5;
 }
 
 .inputRow {
@@ -53,17 +91,23 @@
 .input {
   flex: 1;
   padding: 10px 14px;
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
   border-radius: 8px;
   font-size: 15px;
+  font-family: var(--font-sans);
   background: var(--background);
   color: var(--text-primary);
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .input:focus {
   outline: none;
-  border-color: var(--primary);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(13, 27, 42, 0.1);
+}
+
+.input:disabled {
+  opacity: 0.5;
 }
 
 .saveBtn {
@@ -71,28 +115,53 @@
   align-items: center;
   gap: 6px;
   white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.errorText {
+  color: var(--danger);
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.dangerCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 4px;
 }
 
 .logoutBtn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
+  gap: 10px;
+  padding: 14px 20px;
   background: transparent;
   color: var(--danger);
   font-size: 15px;
   font-weight: 500;
-  border-radius: 8px;
+  border-radius: 10px;
   transition: background 0.2s;
   width: 100%;
+  font-family: var(--font-sans);
 }
 
 .logoutBtn:hover {
-  background: var(--surface-hover);
+  background: var(--danger-light);
 }
 
 @media (max-width: 768px) {
-  .main {
-    padding-bottom: 80px;
+  .container {
+    padding: 24px 16px;
+  }
+  .title {
+    font-size: 22px;
+  }
+  .inputRow {
+    flex-direction: column;
+  }
+  .saveBtn {
+    width: 100%;
+    justify-content: center;
   }
 }

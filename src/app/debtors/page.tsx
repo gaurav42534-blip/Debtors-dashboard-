@@ -1,6 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { supabase } from '@/lib/supabase'
 import { Debtor, Transaction, DebtorWithTransactions, OverdueDebtor } from '@/lib/types'
 import { exportToCSV } from '@/lib/exportData'
@@ -8,15 +10,32 @@ import { useToast } from '@/components/ToastProvider'
 import Navigation from '@/components/Navigation'
 import LedgerModal from '@/components/LedgerModal'
 import styles from './page.module.css'
-import { Plus, Search, User, Download, AlertTriangle } from 'lucide-react'
-import ReceiptGenerator from '@/components/ReceiptGenerator'
+import { Plus, Search, Download, AlertTriangle } from 'lucide-react'
 
-export default function Debtors() {
+const ReceiptGenerator = dynamic(() => import('@/components/ReceiptGenerator'))
+
+const AVATAR_PALETTES = [
+  { bg: '#E8F4FD', color: '#1565C0' }, // blue
+  { bg: '#F3E5F5', color: '#7B1FA2' }, // purple
+  { bg: '#E8F5E9', color: '#2E7D32' }, // green
+  { bg: '#FFF3E0', color: '#E65100' }, // orange
+  { bg: '#FCE4EC', color: '#C62828' }, // rose
+  { bg: '#E0F2F1', color: '#00695C' }, // teal
+]
+const getAvatarStyle = (name: string) => {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0
+  return AVATAR_PALETTES[hash % AVATAR_PALETTES.length]
+}
+
+function DebtorsInner() {
   const toast = useToast()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [debtors, setDebtors] = useState<DebtorWithTransactions[]>([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [sortBy, setSortBy] = useState('name_asc')
+  const [search, setSearch] = useState(() => searchParams.get('q') ?? '')
+  const [sortBy, setSortBy] = useState(() => searchParams.get('sort') ?? 'name_asc')
   const [isAdding, setIsAdding] = useState(false)
   const [selectedDebtor, setSelectedDebtor] = useState<DebtorWithTransactions | null>(null)
   const [receiptDebtor, setReceiptDebtor] = useState<OverdueDebtor | null>(null)
@@ -27,6 +46,17 @@ export default function Debtors() {
   const [newPhone, setNewPhone] = useState('')
   const [newTerms, setNewTerms] = useState('15')
   const [newLimit, setNewLimit] = useState('0')
+
+  const updateURL = useCallback((q: string, sort: string) => {
+    const params = new URLSearchParams()
+    if (q) params.set('q', q)
+    if (sort && sort !== 'name_asc') params.set('sort', sort)
+    const qs = params.toString()
+    router.replace(qs ? `?${qs}` : '?', { scroll: false })
+  }, [router])
+
+  const handleSearchChange = (val: string) => { setSearch(val); updateURL(val, sortBy) }
+  const handleSortChange = (val: string) => { setSortBy(val); updateURL(search, val) }
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false)
@@ -55,8 +85,9 @@ export default function Debtors() {
 
       // 2. Fetch fresh from network
       if (!navigator.onLine) return
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      const { data: authData, error: authError } = await supabase.auth.getUser()
+      if (authError || !authData?.user) return
+      const user = authData.user
 
       const { data, error } = await supabase
         .from('debtors')
@@ -70,21 +101,21 @@ export default function Debtors() {
       localStorage.setItem('debtors_cache', JSON.stringify(data))
       setDebtors((data as DebtorWithTransactions[]) || [])
     } catch (error) {
-      console.error('Error fetching debtors:', error)
+      if (error instanceof TypeError && (error as TypeError).message === 'Failed to fetch') return
+      console.warn('Debtors fetch error:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const calcBalance = (debtor: DebtorWithTransactions) => {
-    let sales = 0
-    let payments = 0
+  const calcBalance = useCallback((debtor: DebtorWithTransactions) => {
+    let sales = 0, payments = 0
     debtor.transactions?.forEach((tx: Transaction) => {
       if (tx.type === 'sale') sales += Number(tx.amount)
       if (tx.type === 'payment') payments += Number(tx.amount)
     })
     return sales - payments
-  }
+  }, [])
 
   const handleAddDebtor = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -114,8 +145,9 @@ export default function Debtors() {
     setNewLimit('0')
 
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      const { data: authData, error: authError } = await supabase.auth.getUser()
+      if (authError || !authData?.user) return
+      const user = authData.user
 
       const { data, error } = await supabase
         .from('debtors')
@@ -148,19 +180,21 @@ export default function Debtors() {
       Phone: d.phone,
       'Terms (Days)': d.default_terms,
       'Credit Limit': d.limit_amount || 0,
-      'Outstanding Balance': calcBalance(d),
+      'Outstanding Balance': balanceMap.get(d.id) ?? calcBalance(d),
     }))
     exportToCSV(exportData, `Debtors_${new Date().toISOString().split('T')[0]}`)
     toast.success('Exported to CSV!')
   }
+
+  const balanceMap = new Map(debtors.map(d => [d.id, calcBalance(d)]))
 
   const filteredDebtors = debtors
     .filter(d => d.name.toLowerCase().includes(search.toLowerCase()) || d.phone.includes(search))
     .sort((a, b) => {
       if (sortBy === 'name_asc') return a.name.localeCompare(b.name)
       if (sortBy === 'name_desc') return b.name.localeCompare(a.name)
-      if (sortBy === 'balance_desc') return calcBalance(b) - calcBalance(a)
-      if (sortBy === 'balance_asc') return calcBalance(a) - calcBalance(b)
+      if (sortBy === 'balance_desc') return (balanceMap.get(b.id) ?? 0) - (balanceMap.get(a.id) ?? 0)
+      if (sortBy === 'balance_asc') return (balanceMap.get(a.id) ?? 0) - (balanceMap.get(b.id) ?? 0)
       if (sortBy === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       return 0
     })
@@ -210,32 +244,35 @@ export default function Debtors() {
         <div className={styles.header}>
           <div>
             <h1>Debtors Ledger</h1>
-            <p>Manage your customers and view individual transactions.</p>
+            <p className={styles.headerSubtitle}>Manage your customers and view individual transactions.</p>
           </div>
           <div className={styles.headerActions}>
-            <button className="btn" style={{ border: '1px solid var(--border)' }} onClick={handleExport} disabled={isOffline}>
-              <Download size={18} /> Export
+            <button className="btn btn-ghost" onClick={handleExport} disabled={isOffline}>
+              <Download size={18} aria-hidden="true" /> Export
             </button>
             <button className="btn btn-primary" onClick={() => setIsAdding(true)} disabled={isOffline}>
-              <Plus size={18} /> Add Debtor
+              <Plus size={18} aria-hidden="true" /> Add Debtor
             </button>
           </div>
         </div>
 
         <div className={styles.controlsRow}>
           <div className={styles.searchBar}>
-            <Search size={20} color="var(--text-secondary)" />
+            <Search size={20} color="var(--text-secondary)" aria-hidden="true" />
             <input
-              type="text"
-              placeholder="Search by name or phone..."
+              type="search"
+              aria-label="Search debtors"
+              placeholder="Search by name or phone…"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={e => handleSearchChange(e.target.value)}
+              autoComplete="off"
             />
           </div>
           <select
             className={`input-field ${styles.sortSelect}`}
+            aria-label="Sort debtors"
             value={sortBy}
-            onChange={e => setSortBy(e.target.value)}
+            onChange={e => handleSortChange(e.target.value)}
           >
             <option value="name_asc">Name (A-Z)</option>
             <option value="name_desc">Name (Z-A)</option>
@@ -249,7 +286,7 @@ export default function Debtors() {
           {filteredDebtors.length === 0 ? (
             <div className={styles.emptyState}>
               <div className={styles.emptyIcon}>
-                <User size={36} />
+                <span style={{ fontSize: '28px' }}>₹</span>
               </div>
               <h3>No debtors found</h3>
               <p>Click &quot;Add Debtor&quot; to create your first customer.</p>
@@ -267,13 +304,13 @@ export default function Debtors() {
               </thead>
               <tbody>
                 {filteredDebtors.map(debtor => {
-                  const balance = calcBalance(debtor)
+                  const balance = balanceMap.get(debtor.id) ?? 0
                   const overLimit = debtor.limit_amount > 0 && balance > debtor.limit_amount
                   return (
                     <tr key={debtor.id}>
                       <td>
                         <div className={styles.nameCell}>
-                          <div className={styles.avatar}><User size={16} /></div>
+                          <div className={styles.avatar} style={{ background: getAvatarStyle(debtor.name).bg, color: getAvatarStyle(debtor.name).color, boxShadow: 'none' }}>{debtor.name.charAt(0).toUpperCase()}</div>
                           <span>{debtor.name}</span>
                           {overLimit && (
                             <span className={styles.creditWarning} title={`Exceeds credit limit of ${formatCurrency(debtor.limit_amount)}`}>
@@ -285,11 +322,11 @@ export default function Debtors() {
                       <td>{debtor.phone}</td>
                       <td><span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{debtor.default_terms || 15} days</span></td>
                       <td className={`${styles.textRight} ${balance > 0 ? styles.dangerText : styles.successText}`}>
-                        <span style={{ fontWeight: 600 }}>{formatCurrency(balance)}</span>
+                        <span className={styles.balanceAmount}>{formatCurrency(balance)}</span>
                       </td>
                       <td style={{ whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'flex', gap: '8px' }}>
-                          <button className="btn" style={{ border: '1px solid var(--border)' }} onClick={() => setSelectedDebtor(debtor)}>
+                          <button className="btn btn-ghost btn-sm" onClick={() => setSelectedDebtor(debtor)}>
                             View Ledger
                           </button>
                           <button className="btn btn-primary" onClick={() => {
@@ -322,7 +359,10 @@ export default function Debtors() {
       {isAdding && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
-            <h2>Add New Debtor</h2>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalHeaderMark}>₹</div>
+              <h2>Add New Debtor</h2>
+            </div>
             <form onSubmit={handleAddDebtor}>
               <div className="form-group">
                 <label>Full Name or Shop Name</label>
@@ -332,6 +372,7 @@ export default function Debtors() {
                   required
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
+                  autoComplete="off"
                 />
               </div>
               <div className="form-group">
@@ -342,6 +383,7 @@ export default function Debtors() {
                   required
                   value={newPhone}
                   onChange={e => setNewPhone(e.target.value)}
+                  autoComplete="tel"
                 />
               </div>
               <div className="form-group">
@@ -366,14 +408,13 @@ export default function Debtors() {
                 />
               </div>
               <div className={styles.modalActions}>
-                <button type="button" className="btn" style={{ border: '1px solid var(--border)' }} onClick={() => setIsAdding(false)}>Cancel</button>
+                <button type="button" className="btn btn-ghost" onClick={() => setIsAdding(false)}>Cancel</button>
                 <button type="submit" className="btn btn-primary">Save Debtor</button>
               </div>
             </form>
           </div>
         </div>
       )}
-
       {receiptDebtor && (
         <ReceiptGenerator
           debtor={{ ...receiptDebtor, overdueAmount: calcBalance(receiptDebtor) }}
@@ -392,5 +433,13 @@ export default function Debtors() {
         />
       )}
     </div>
+  )
+}
+
+export default function Debtors() {
+  return (
+    <Suspense>
+      <DebtorsInner />
+    </Suspense>
   )
 }

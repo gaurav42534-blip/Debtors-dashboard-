@@ -92,11 +92,15 @@ export default function SettingsPage() {
       <Navigation />
       <main className={styles.main}>
         <div className={styles.container}>
-          <h1 className={styles.title}>Settings</h1>
+
+          <div className={styles.pageHeader}>
+            <h1 className={styles.title}>Settings</h1>
+            <p className={styles.subtitle}>Manage your shop profile and data.</p>
+          </div>
 
           <div className={styles.card}>
             <div className={styles.cardHeader}>
-              <Store size={20} />
+              <div className={styles.cardHeaderIcon}><Store size={16} /></div>
               <h2>Shop Name</h2>
             </div>
             <p className={styles.hint}>This name appears on payment reminder images and WhatsApp messages.</p>
@@ -115,20 +119,16 @@ export default function SettingsPage() {
                 onClick={handleSave}
                 disabled={saving || loading || !shopName.trim()}
               >
-                <Save size={16} />
+                <Save size={15} />
                 {saved ? 'Saved!' : saving ? 'Saving...' : 'Save'}
               </button>
             </div>
-            {saveError && (
-              <p style={{ color: 'red', marginTop: '8px', fontSize: '14px' }}>
-                Save failed: {saveError}
-              </p>
-            )}
+            {saveError && <p className={styles.errorText}>Save failed: {saveError}</p>}
           </div>
 
           <div className={styles.card}>
             <div className={styles.cardHeader}>
-              <Download size={20} />
+              <div className={styles.cardHeaderIcon}><Download size={16} /></div>
               <h2>Data Backup</h2>
             </div>
             <p className={styles.hint}>Download all your debtors, transactions, and settings as a JSON file. Store it safely as a manual backup.</p>
@@ -137,22 +137,19 @@ export default function SettingsPage() {
               onClick={handleBackup}
               disabled={backingUp || loading}
             >
-              <Download size={16} />
+              <Download size={15} />
               {backingUp ? 'Preparing...' : 'Download Backup'}
             </button>
-            {backupError && (
-              <p style={{ color: 'red', marginTop: '8px', fontSize: '14px' }}>
-                {backupError}
-              </p>
-            )}
+            {backupError && <p className={styles.errorText}>{backupError}</p>}
           </div>
 
-          <div className={styles.card}>
+          <div className={styles.dangerCard}>
             <button className={styles.logoutBtn} onClick={handleLogout}>
-              <LogOut size={18} />
-              Logout
+              <LogOut size={17} />
+              Sign Out
             </button>
           </div>
+
         </div>
       </main>
     </>
