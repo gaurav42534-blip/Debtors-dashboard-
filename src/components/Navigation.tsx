@@ -32,7 +32,6 @@ export default function Navigation() {
           <span className={styles.navBrandText}>Khata<span className={styles.navBrandAccent}>.</span></span>
         </div>
         
-        {/* Desktop nav links */}
         <div className={styles.navLinksDesktop}>
           <Link href="/dashboard" className={`${styles.navLink} ${pathname === '/dashboard' ? styles.active : ''}`}>
             <Home size={18} /> Dashboard
@@ -61,11 +60,6 @@ export default function Navigation() {
         <Link href="/debtors" className={`${styles.bottomTab} ${pathname === '/debtors' ? styles.bottomTabActive : ''}`}>
           <Users size={20} />
           <span>Debtors</span>
-        </Link>
-
-        <Link href="/settings" className={`${styles.bottomTab} ${pathname === '/settings' ? styles.bottomTabActive : ''}`}>
-          <Settings size={20} />
-          <span>Settings</span>
         </Link>
       </div>
     </nav>
